@@ -29,7 +29,7 @@
             overflow-x: hidden;
         }
 
-        /* Sidebar System - Fixed Isolation */
+        /* Sidebar System */
         .sidebar {
             width: 70px;
             background: #000;
@@ -195,6 +195,8 @@
             gap: 10px;
             transition: 0.3s;
             text-transform: uppercase;
+            cursor: pointer;
+            border: none;
         }
         .btn-direct-download:hover { transform: scale(1.03); box-shadow: 0 0 20px rgba(0, 255, 65, 0.4); }
 
@@ -241,6 +243,8 @@
             font-size: 11px;
             font-weight: bold;
             transition: 0.2s;
+            cursor: pointer;
+            display: inline-block;
         }
         .dl-icon-btn:hover { filter: brightness(1.3); transform: scale(1.1); }
 
@@ -299,9 +303,9 @@
                 <div class="preview-zone">
                     <img src="" id="resThumb" class="thumb-preview">
                     <div class="action-hub">
-                        <a href="#" id="mainDownloadBtn" class="btn-direct-download" download>
-                            <i class="fas fa-file-download"></i> تحميل مباشر
-                        </a>
+                        <button id="mainDownloadBtn" class="btn-direct-download">
+                            <i class="fas fa-file-download"></i> <span id="mainBtnText">تحميل مباشر</span>
+                        </button>
                         <button class="cloud-btn" id="mastermindSync" title="Sync to VIP_ARM OS" onclick="sendToCloud()">
                             <i class="fab fa-telegram-plane"></i>
                         </button>
@@ -310,7 +314,7 @@
                 <div class="info-zone">
                     <h2 id="resTitle" style="margin: 0; font-size: 22px; color: #fff;">Video Title</h2>
                     <p id="resAuthor" style="color: var(--neon-purple); font-family: 'Share Tech Mono'; margin: 10px 0;">SOURCE: UNKNOWN</p>
-                    
+
                     <div style="margin: 25px 0; display: flex; gap: 12px;">
                         <span id="resDuration" class="badge" style="background: rgba(255,255,255,0.05); color: #fff;">00:00</span>
                         <span id="resPlatform" class="badge" style="background: rgba(255,255,255,0.05); color: var(--neon-green);">LIVE FEED</span>
@@ -343,11 +347,50 @@
             "SUCCESS: DATA EXTRACTED."
         ];
 
+        // --- الميزة الجديدة: وظيفة التحميل القسري الذكي ---
+        async function triggerDirectDownload(url, filename, btnElement) {
+            const originalContent = btnElement.innerHTML;
+            
+            try {
+                // تحديث الحالة بصرياً
+                btnElement.style.opacity = "0.7";
+                btnElement.innerHTML = '<i class="fas fa-cog fa-spin"></i> جاري التحضير...';
+                
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Download failed');
+                
+                const blob = await response.blob();
+                const blobUrl = window.URL.createObjectURL(blob);
+                
+                const tempAnchor = document.createElement('a');
+                tempAnchor.style.display = 'none';
+                tempAnchor.href = blobUrl;
+                tempAnchor.download = filename || 'Kernel_Captured_Media.mp4';
+                
+                document.body.appendChild(tempAnchor);
+                tempAnchor.click();
+                
+                // تنظيف
+                setTimeout(() => {
+                    window.URL.revokeObjectURL(blobUrl);
+                    document.body.removeChild(tempAnchor);
+                    btnElement.innerHTML = originalContent;
+                    btnElement.style.opacity = "1";
+                }, 100);
+
+            } catch (error) {
+                console.error("Direct download intercepted by CORS or Network issue:", error);
+                // Fallback: إذا فشل الـ Blob (بسبب CORS)، نفتح الرابط في تبويب جديد كحل أخير
+                window.open(url, '_blank');
+                btnElement.innerHTML = originalContent;
+                btnElement.style.opacity = "1";
+            }
+        }
+
         async function processExtraction() {
             const url = document.getElementById('targetUrl').value;
             if(!url) return;
 
-            // UI Reset
             const consoleBox = document.getElementById('consoleFeed');
             consoleBox.style.display = 'block';
             consoleBox.innerHTML = '';
@@ -356,7 +399,6 @@
             const btn = document.getElementById('extractBtn');
             btn.disabled = true;
 
-            // Terminal Emulation
             let logIndex = 0;
             const logInterval = setInterval(() => {
                 if(logIndex < logs.length) {
@@ -365,7 +407,7 @@
                 } else {
                     clearInterval(logInterval);
                 }
-            }, 500);
+            }, 400);
 
             try {
                 const response = await fetch('/api/download', {
@@ -398,14 +440,13 @@
             document.getElementById('resAuthor').innerText = `SOURCE: ${data.uploader || 'External Stream'}`;
             document.getElementById('resDuration').innerText = data.duration_string || '--:--';
 
-            // الميزة المطلوبة: ربط أعلى جودة فيديو بزر التحميل المباشر
+            // تصفية الجودات المتاحة
             const videoFormats = data.formats.filter(f => f.vcodec !== 'none' && f.ext === 'mp4').sort((a, b) => (b.height || 0) - (a.height || 0));
-            
+
+            const mainBtn = document.getElementById('mainDownloadBtn');
             if(videoFormats.length > 0) {
-                const mainBtn = document.getElementById('mainDownloadBtn');
-                mainBtn.href = videoFormats[0].url;
-                // إجبار التحميل عبر تعديل الخصائص
-                mainBtn.setAttribute('download', `${data.title}.mp4`);
+                // ربط الزر الرئيسي بأعلى جودة باستخدام الوظيفة الجديدة
+                mainBtn.onclick = () => triggerDirectDownload(videoFormats[0].url, `${data.title}.mp4`, mainBtn);
             }
 
             const list = document.getElementById('formatList');
@@ -414,19 +455,18 @@
             data.formats.forEach(f => {
                 const isAudio = f.vcodec === 'none';
                 const tr = document.createElement('tr');
-                
+
                 tr.innerHTML = `
                     <td><span class="badge ${isAudio ? 'badge-audio' : 'badge-video'}">${f.ext}</span></td>
                     <td style="font-family: 'Share Tech Mono'; color: #fff;">${f.resolution || 'AUDIO'}</td>
                     <td style="color: var(--text-dim);">${f.filesize_approx || f.filesize || 'Auto'}</td>
                     <td>
-                        <a href="${f.url}" download="${data.title}.${f.ext}" target="_blank" class="dl-icon-btn">GET</a>
+                        <button onclick="triggerDirectDownload('${f.url}', '${data.title}.${f.ext}', this)" class="dl-icon-btn">GET</button>
                     </td>
                 `;
                 list.appendChild(tr);
             });
 
-            // Smooth Scroll to results
             panel.scrollIntoView({ behavior: 'smooth' });
         }
 

@@ -3,7 +3,7 @@ import yt_dlp
 import logging
 import uuid
 import requests
-from flask import Flask, render_template, request, jsonify, send_file, after_this_request
+from flask import Flask, render_template, request, jsonify, send_file, after_this_request, Response, stream_with_context
 from flask_cors import CORS
 from PIL import Image
 from PIL.ExifTags import TAGS
@@ -71,7 +71,35 @@ def dub_video(input_path, lang='ar'):
     if os.path.exists(temp_audio): os.remove(temp_audio)
     return output_path
 
-# --- [NEW] ميزة الفحص الأمني المطورة (Scanner Core) ---
+# --- [NEW] ميزة التحميل عبر البروكسي (حل مشكلة الفتح في تبويب جديد) ---
+@app.route('/api/proxy_download')
+def proxy_download():
+    target_url = request.args.get('url')
+    filename = request.args.get('filename', 'VIP_ARM_Capture.mp4')
+    
+    if not target_url:
+        return "Target URL is missing", 400
+
+    try:
+        # نقوم بسحب البيانات كـ Stream لتوفير موارد السيرفر
+        req = requests.get(target_url, stream=True, timeout=60, verify=False)
+        
+        def generate():
+            for chunk in req.iter_content(chunk_size=8192):
+                yield chunk
+
+        return Response(
+            stream_with_context(generate()),
+            headers={
+                "Content-Type": req.headers.get("Content-Type", "video/mp4"),
+                "Content-Disposition": f"attachment; filename={filename}"
+            }
+        )
+    except Exception as e:
+        logger.error(f"Proxy Error: {str(e)}")
+        return f"Kernel Error: {str(e)}", 500
+
+# --- ميزة الفحص الأمني المطورة (Scanner Core) ---
 @app.route('/api/scan', methods=['POST'])
 def web_scanner():
     data = request.json
@@ -85,7 +113,7 @@ def web_scanner():
 
         response = requests.get(target_url, timeout=10, verify=True)
         headers = response.headers
-        
+
         security_headers = [
             "Content-Security-Policy", "Strict-Transport-Security",
             "X-Content-Type-Options", "X-Frame-Options", "X-XSS-Protection"
@@ -136,30 +164,55 @@ def unified_handler():
     data = request.json
     url = data.get('url')
     mode = data.get('mode')
-    raw_path = final_path = None
-
+    
     if not url: return jsonify({"status": "failed", "message": "No URL provided"}), 400
 
     try:
         if not mode:
-            with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
+            # وضع التحليل السريع (Extraction)
+            with yt_dlp.YoutubeDL({'quiet': True, 'nocheckcertificate': True}) as ydl:
                 info = ydl.extract_info(url, download=False)
-                formats = [{"ext": f.get('ext'), "resolution": f.get('resolution'), "filesize": format_size(f.get('filesize')), "url": f.get('url')} for f in info.get('formats', [])[-8:] if f.get('url')]
-                return jsonify({"status": "success", "title": info.get('title'), "thumbnail": info.get('thumbnail'), "formats": formats[::-1]})
+                # استخراج التنسيقات المباشرة
+                formats = []
+                for f in info.get('formats', []):
+                    if f.get('url'):
+                        formats.append({
+                            "ext": f.get('ext'),
+                            "resolution": f.get('resolution') or f.get('format_note'),
+                            "filesize": format_size(f.get('filesize') or f.get('filesize_approx')),
+                            # نرسل الرابط كـ Proxy لضمان التحميل القسري
+                            "url": f.get('url'),
+                            "proxy_url": f"/api/proxy_download?url={requests.utils.quote(f.get('url'))}&filename={requests.utils.quote(info.get('title', 'video'))}.{f.get('ext')}"
+                        })
+                
+                return jsonify({
+                    "status": "success", 
+                    "title": info.get('title'), 
+                    "thumbnail": info.get('thumbnail'), 
+                    "uploader": info.get('uploader'),
+                    "duration_string": info.get('duration_string'),
+                    "formats": formats[::-1][:15] # إرسال آخر 15 تنسيق (الأعلى جودة غالباً)
+                })
         else:
+            # وضع المعالجة (Shorts / Dubbing)
             with yt_dlp.YoutubeDL(get_ydl_opts()) as ydl:
                 info = ydl.extract_info(url, download=True)
                 raw_path = ydl.prepare_filename(info)
-            
+
             final_path = create_shorts(raw_path) if mode == 'shorts' else dub_video(raw_path) if mode == 'dub' else raw_path
 
             @after_this_request
             def cleanup(response):
-                for f in {raw_path, final_path}:
-                    if f and os.path.exists(f): os.remove(f)
+                try:
+                    for f in {raw_path, final_path}:
+                        if f and os.path.exists(f): os.remove(f)
+                except: pass
                 return response
+            
             return send_file(final_path, as_attachment=True)
+            
     except Exception as e:
+        logger.error(f"Unified Handler Error: {str(e)}")
         return jsonify({"status": "failed", "error": str(e)}), 500
 
 @app.route('/api/exif', methods=['POST'])
@@ -176,4 +229,5 @@ def forensic_core():
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+    # تفعيل الـ Threaded للتعامل مع طلبات الـ Stream بفعالية
+    app.run(host='0.0.0.0', port=port, threaded=True)
