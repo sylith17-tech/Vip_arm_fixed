@@ -2,406 +2,427 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VIP_ARM Studio ULTIMATE | Forensic Core V4</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VIP_ARM Studio V5 | Forensic Ultimate</title>
 
-    <!-- External Assets -->
+    <!-- UI Core Assets -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    
-    <!-- AI Core: Face-API -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
 
     <style>
         :root {
-            --primary: #00f2ff;
-            --primary-dark: #008a91;
-            --primary-glow: rgba(0, 242, 255, 0.4);
-            --bg-dark: #050b18;
-            --panel-bg: rgba(13, 25, 48, 0.85);
-            --glass-border: rgba(0, 242, 255, 0.15);
-            --accent-pink: #ff007a;
-            --text-dim: #94a3b8;
-            --success: #10b981;
+            --cyan: #00f2ff;
+            --neon-pink: #ff007a;
+            --deep-blue: #020617;
+            --glass: rgba(15, 23, 42, 0.8);
+            --border: rgba(0, 242, 255, 0.2);
+            --safe-area: env(safe-area-inset-bottom);
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; scrollbar-width: thin; scrollbar-color: var(--primary) transparent; }
-        
+        * { 
+            margin: 0; padding: 0; box-sizing: border-box; 
+            -webkit-tap-highlight-color: transparent;
+        }
+
         body {
-            background-color: var(--bg-dark);
-            background-image: radial-gradient(circle at 10% 20%, rgba(0, 242, 255, 0.05) 0%, transparent 40%), radial-gradient(circle at 90% 80%, rgba(112, 0, 255, 0.05) 0%, transparent 40%);
-            color: #fff;
+            background: var(--deep-blue);
+            color: white;
             font-family: 'Cairo', sans-serif;
-            overflow: hidden;
             height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
 
+        /* Header Optimization */
         header {
-            height: 60px;
-            background: rgba(5, 11, 24, 0.95);
-            border-bottom: 1px solid var(--glass-border);
+            padding: 15px 20px;
+            background: rgba(0, 0, 0, 0.8);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(15px);
+            z-index: 1000;
+        }
+
+        .system-title {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--cyan);
+            font-size: 1rem;
+            text-shadow: 0 0 10px var(--cyan);
+        }
+
+        /* Main Workspace */
+        .app-core {
+            flex: 1;
+            display: flex;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .canvas-area {
+            flex: 1;
+            position: relative;
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            padding: 0 25px;
-            backdrop-filter: blur(10px);
-            z-index: 100;
+            justify-content: center;
+            background-image: 
+                linear-gradient(var(--border) 1px, transparent 1px),
+                linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size: 30px 30px;
+            padding: 20px;
         }
 
-        .brand-logo { font-family: 'JetBrains Mono', monospace; font-weight: bold; font-size: 1.2rem; letter-spacing: 2px; color: var(--primary); display: flex; align-items: center; gap: 12px; }
+        #mainCanvas, #overlayCanvas {
+            max-width: 95%;
+            max-height: 95%;
+            box-shadow: 0 0 40px rgba(0,0,0,0.5);
+            border-radius: 8px;
+            position: absolute;
+        }
 
-        .main-container { display: flex; height: calc(100vh - 60px); padding: 10px; gap: 10px; }
+        /* Side Panels (Desktop) / Bottom Sheets (Mobile) */
+        .panel {
+            width: 320px;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 900;
+        }
 
-        .sidebar { width: 350px; display: flex; flex-direction: column; gap: 10px; }
+        .panel-header {
+            padding: 15px;
+            background: rgba(255,255,255,0.05);
+            font-size: 0.85rem;
+            color: var(--cyan);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid var(--border);
+        }
 
-        .card { background: var(--panel-bg); border: 1px solid var(--glass-border); border-radius: 16px; backdrop-filter: blur(12px); overflow: hidden; display: flex; flex-direction: column; }
+        .scroll-box {
+            padding: 15px;
+            overflow-y: auto;
+            flex: 1;
+        }
 
-        .card-header { padding: 15px 20px; background: rgba(255, 255, 255, 0.03); border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; }
+        /* Floating Controls for Mobile */
+        @media (max-width: 768px) {
+            .app-core { flex-direction: column; }
+            .panel {
+                width: 100%;
+                height: 40%;
+                border-left: none;
+                border-top: 1px solid var(--border);
+                position: absolute;
+                bottom: 0;
+                transform: translateY(100%);
+            }
+            .panel.active { transform: translateY(0); }
+            .mobile-nav {
+                display: flex;
+                background: black;
+                padding: 10px;
+                justify-content: space-around;
+                border-top: 1px solid var(--border);
+                padding-bottom: calc(10px + var(--safe-area));
+            }
+        }
 
-        .card-header h3 { font-size: 0.9rem; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+        @media (min-width: 769px) {
+            .mobile-nav { display: none; }
+            .panel { transform: none !important; }
+        }
 
-        .content-scroll { padding: 20px; overflow-y: auto; flex: 1; }
+        /* Visual Controls */
+        .control-item { margin-bottom: 18px; }
+        .control-item label { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 8px; color: #94a3b8; }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            accent-color: var(--cyan);
+            cursor: pointer;
+        }
 
-        .workspace { flex: 1; position: relative; background: #020611; border-radius: 20px; border: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: inset 0 0 50px rgba(0,0,0,0.8); }
+        .grid-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
 
-        .canvas-container { position: relative; display: flex; justify-content: center; align-items: center; }
+        .btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            padding: 12px;
+            border-radius: 10px;
+            color: white;
+            font-family: 'Cairo';
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: 0.3s;
+        }
 
-        #mainCanvas, #overlayCanvas { position: absolute; border-radius: 4px; max-width: 100%; max-height: 100%; }
+        .btn:active { transform: scale(0.95); }
+        .btn:hover { background: var(--cyan); color: black; box-shadow: 0 0 15px var(--cyan); }
+        .btn-main { background: var(--cyan); color: black; font-weight: bold; }
 
-        .control-group { margin-bottom: 15px; }
-        .control-group label { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-dim); margin-bottom: 8px; }
+        /* Terminal Style */
+        .mini-terminal {
+            height: 100px;
+            background: #000;
+            padding: 10px;
+            font-family: 'JetBrains Mono';
+            font-size: 0.7rem;
+            color: #10b981;
+            border-top: 1px solid var(--border);
+            overflow-y: auto;
+        }
 
-        input[type="range"] { width: 100%; height: 5px; background: #1e293b; border-radius: 5px; accent-color: var(--primary); cursor: pointer; }
+        /* Upload Placeholder */
+        .drop-zone {
+            border: 2px dashed var(--border);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .drop-zone:hover { border-color: var(--cyan); background: rgba(0,242,255,0.05); }
 
-        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-
-        .action-btn { background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border); padding: 10px; border-radius: 10px; color: #fff; cursor: pointer; font-family: 'Cairo'; font-size: 0.75rem; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 6px; }
-
-        .action-btn:hover { background: var(--primary); color: #000; box-shadow: 0 0 15px var(--primary-glow); transform: translateY(-1px); }
-
-        .btn-ai-toggle { background: rgba(16, 185, 129, 0.1); border-color: var(--success); color: var(--success); width: 100%; margin-bottom: 10px; font-weight: bold; }
-
-        .btn-primary { background: linear-gradient(45deg, var(--primary-dark), var(--primary)); border: none; color: #000; font-weight: bold; }
-
-        .terminal { height: 120px; background: rgba(0,0,0,0.7); font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; padding: 12px; color: #10b981; overflow-y: auto; border-top: 1px solid var(--glass-border); }
-
-        .terminal p::before { content: "➜ "; color: var(--accent-pink); }
-
-        .upload-zone { text-align: center; cursor: pointer; padding: 40px; border: 2px dashed var(--glass-border); border-radius: 20px; }
-
-        .tab-nav { display: flex; background: rgba(0,0,0,0.2); border-radius: 10px; padding: 5px; margin-bottom: 15px; }
-        .tab-btn { flex: 1; padding: 6px; border-radius: 8px; border: none; background: transparent; color: var(--text-dim); cursor: pointer; font-family: 'Cairo'; font-size: 0.8rem; }
-        .tab-btn.active { background: var(--primary); color: #000; font-weight: bold; }
-
-        .hidden { display: none !important; }
-        .ai-active { border: 1px solid var(--success); box-shadow: 0 0 10px rgba(16, 185, 129, 0.2); }
-
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
 <header>
-    <div class="brand-logo"><i class="fas fa-shield-halved"></i> VIP_ARM // FORENSIC CORE v4.0</div>
-    <div style="display: flex; gap: 15px; align-items: center;">
-        <div id="statusIndicator" style="font-family: 'JetBrains Mono'; font-size: 0.7rem; background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 4px 12px; border-radius: 20px; border: 1px solid #10b981;">● جاهز للعمل</div>
-        <button onclick="location.reload()" class="action-btn" style="padding: 5px 15px; border-color: var(--accent-pink); color: var(--accent-pink);"><i class="fas fa-power-off"></i> إعادة ضبط</button>
+    <div class="system-title"><i class="fas fa-microchip"></i> VIP_ARM // V5.0</div>
+    <div style="display: flex; gap: 10px;">
+        <button class="btn" onclick="triggerUpload()" style="padding: 6px 15px;"><i class="fas fa-plus"></i></button>
+        <button class="btn" onclick="exportArt()" style="padding: 6px 15px; border-color: var(--neon-pink);"><i class="fas fa-download"></i></button>
     </div>
 </header>
 
-<div class="main-container">
-    <aside class="sidebar">
-        <div class="card" style="flex: 1;">
-            <div class="card-header"><h3><i class="fas fa-sliders"></i> معمل المعالجة الجنائية</h3></div>
-            <div class="content-scroll">
-                <div class="tab-nav">
-                    <button class="tab-btn active" onclick="switchTab('adjust')">أساسي</button>
-                    <button class="tab-btn" onclick="switchTab('filters')">الفلاتر</button>
-                    <button class="tab-btn" onclick="switchTab('face')">الذكاء الاصطناعي</button>
-                </div>
-
-                <!-- التحسينات الأساسية -->
-                <div id="adjust-panel">
-                    <div class="control-group"><label>السطوع <span id="val-br">100%</span></label><input type="range" id="br" min="0" max="200" value="100"></div>
-                    <div class="control-group"><label>التباين <span id="val-ct">100%</span></label><input type="range" id="ct" min="0" max="200" value="100"></div>
-                    <div class="control-group"><label>التشبع <span id="val-sat">100%</span></label><input type="range" id="sat" min="0" max="200" value="100"></div>
-                    <div class="control-group"><label>التغبيش (Blur) <span id="val-blur">0px</span></label><input type="range" id="blur" min="0" max="20" value="0"></div>
-                </div>
-
-                <!-- الفلاتر التقنية والجديدة -->
-                <div id="filters-panel" style="display: none;">
-                    <p style="font-size: 0.7rem; color: var(--primary); margin-bottom: 10px;">فلاتر احترافية جديدة:</p>
-                    <div class="btn-grid" style="margin-bottom: 15px;">
-                        <button onclick="applyMagic('cyberpunk')" class="action-btn" style="border-color: #ff007a;"><i class="fas fa-bolt"></i> Cyberpunk</button>
-                        <button onclick="applyMagic('oldfilm')" class="action-btn" style="border-color: #8b4513;"><i class="fas fa-film"></i> Old Film</button>
-                        <button onclick="applyMagic('golden')" class="action-btn" style="border-color: #ffd700;"><i class="fas fa-sun"></i> Golden Hour</button>
-                        <button onclick="applyMagic('none')" class="action-btn"><i class="fas fa-broom"></i> مسح الفلاتر</button>
-                    </div>
-                    <p style="font-size: 0.7rem; color: var(--text-dim); margin-bottom: 10px;">فلاتر التحليل الجنائي:</p>
-                    <div class="btn-grid">
-                        <button onclick="applyMagic('thermal')" class="action-btn"><i class="fas fa-temperature-high"></i> حراري</button>
-                        <button onclick="applyMagic('night')" class="action-btn"><i class="fas fa-eye"></i> رؤية ليلية</button>
-                        <button onclick="applyMagic('binary')" class="action-btn"><i class="fas fa-microchip"></i> ثنائي</button>
-                        <button onclick="applyMagic('edges')" class="action-btn"><i class="fas fa-vector-square"></i> حواف</button>
-                        <button onclick="applyMagic('scanline')" class="action-btn"><i class="fas fa-barcode"></i> سكانلاين</button>
-                        <button onclick="applyMagic('matrix')" class="action-btn"><i class="fas fa-code"></i> ماتريكس</button>
-                    </div>
-                </div>
-
-                <!-- لوحة الذكاء الاصطناعي الاختيارية -->
-                <div id="face-panel" style="display: none;">
-                    <button id="aiToggleBtn" onclick="toggleAIModule()" class="action-btn btn-ai-toggle">
-                        <i class="fas fa-robot"></i> تفعيل محرك الذكاء الاصطناعي
-                    </button>
-                    
-                    <div id="aiControls" class="hidden">
-                        <div class="btn-grid" style="grid-template-columns: 1fr;">
-                            <button onclick="detectFaces()" class="action-btn"><i class="fas fa-search"></i> بدء مسح الوجوه</button>
-                            <button onclick="toggleAnonymity()" class="action-btn"><i class="fas fa-user-secret"></i> تجهيل الهوية تلقائياً</button>
-                            <button onclick="extractFaceData()" class="action-btn"><i class="fas fa-file-invoice"></i> استخراج بيانات الوجه</button>
-                            <button onclick="clearOverlay()" class="action-btn" style="border-color: var(--accent-pink);"><i class="fas fa-trash-can"></i> مسح رسومات التحليل</button>
-                        </div>
-                    </div>
-                    <p id="aiNote" style="font-size: 0.65rem; color: var(--text-dim); text-align: center; margin-top: 10px;">
-                        * تفعيل الذكاء الاصطناعي يتطلب تحميل موديلات معالجة عصبية.
-                    </p>
-                </div>
+<div class="app-core">
+    <!-- Left Panel: Core Analysis -->
+    <aside class="panel" id="panel-analysis">
+        <div class="panel-header"><i class="fas fa-bolt"></i> التحليل السريع</div>
+        <div class="scroll-box">
+            <div class="control-item">
+                <label>السطوع الجنائي <span id="val-br">100%</span></label>
+                <input type="range" id="br" min="0" max="200" value="100" oninput="applyAll()">
             </div>
-        </div>
-
-        <div class="card" style="height: 200px;">
-            <div class="card-header"><h3><i class="fas fa-terminal"></i> سجل العمليات</h3></div>
-            <div id="terminal" class="terminal"><p>Kernel-0x0 v4.0 Initialized...</p></div>
+            <div class="control-item">
+                <label>تباين الأدلة <span id="val-ct">100%</span></label>
+                <input type="range" id="ct" min="0" max="200" value="100" oninput="applyAll()">
+            </div>
+            
+            <p style="font-size: 0.7rem; color: var(--cyan); margin: 15px 0 10px;">الفلاتر السينمائية الجديدة:</p>
+            <div class="grid-actions">
+                <button class="btn" onclick="setFilter('vintage')"><i class="fas fa-camera"></i> Vintage</button>
+                <button class="btn" onclick="setFilter('cold')"><i class="fas fa-snowflake"></i> Cold Ice</button>
+                <button class="btn" onclick="setFilter('urban')"><i class="fas fa-city"></i> Urban</button>
+                <button class="btn" onclick="setFilter('dramatic')"><i class="fas fa-theater-masks"></i> Drama</button>
+            </div>
         </div>
     </aside>
 
-    <main class="workspace" id="dropFrame">
-        <div id="dropPrompt" class="upload-zone" onclick="triggerUpload()">
-            <i class="fas fa-upload" style="font-size: 3rem; color: var(--primary); margin-bottom: 20px;"></i>
-            <h2 style="font-family: 'JetBrains Mono'; color: var(--primary);">DEPOSIT PAYLOAD</h2>
-            <p style="color: var(--text-dim); margin-top: 10px;">اسحب صورة أو انقر للتحليل الجنائي</p>
+    <!-- Center Workspace -->
+    <main class="canvas-area" id="dropFrame">
+        <div id="dropPrompt" class="drop-zone" onclick="triggerUpload()">
+            <i class="fas fa-cloud-upload-alt" style="font-size: 3rem; color: var(--cyan); margin-bottom: 15px;"></i>
+            <h3>استيراد البيانات</h3>
+            <p style="font-size: 0.8rem; opacity: 0.6;">اسحب الصورة هنا أو اضغط للاختيار</p>
         </div>
-        <div class="canvas-container">
-            <canvas id="mainCanvas"></canvas>
-            <canvas id="overlayCanvas"></canvas>
-        </div>
+        <canvas id="mainCanvas"></canvas>
+        <canvas id="overlayCanvas"></canvas>
     </main>
 
-    <aside class="sidebar">
-        <div class="card">
-            <div class="card-header"><h3><i class="fas fa-robot"></i> محرك OSINT</h3></div>
-            <div class="content-scroll">
-                <div class="control-group">
-                    <label>رابط استخباراتي (URL)</label>
-                    <input type="text" id="videoUrl" placeholder="https://..." style="width: 100%; background: #000; border: 1px solid var(--glass-border); padding: 10px; border-radius: 8px; color: var(--primary); font-size: 0.8rem;">
+    <!-- Right Panel: AI & OSINT -->
+    <aside class="panel" id="panel-ai">
+        <div class="panel-header"><i class="fas fa-robot"></i> الذكاء الاصطناعي</div>
+        <div class="scroll-box">
+            <button class="btn btn-main" id="aiBtn" onclick="initAI()" style="width: 100%; margin-bottom: 15px;">
+                <i class="fas fa-brain"></i> تشغيل محرك المعالجة
+            </button>
+            
+            <div id="aiTools" class="hidden">
+                <div class="grid-actions">
+                    <button class="btn" onclick="detectFaces()"><i class="fas fa-id-card"></i> كشف الوجوه</button>
+                    <button class="btn" onclick="anonymize()"><i class="fas fa-mask"></i> تجهيل</button>
                 </div>
-                <button onclick="addLog('OSINT: Scanning remote target...')" class="action-btn btn-primary" style="width: 100%; margin-bottom: 8px;"><i class="fas fa-globe"></i> فحص OSINT</button>
-                <button onclick="cleanExif()" class="action-btn" style="width: 100%;"><i class="fas fa-eraser"></i> مسح ميتاداتا (EXIF)</button>
             </div>
-        </div>
 
-        <div class="card" style="margin-top: auto;">
-            <div class="card-header"><h3><i class="fas fa-file-export"></i> التصدير</h3></div>
-            <div class="content-scroll">
-                <button onclick="exportArt()" class="action-btn btn-primary" style="width: 100%; padding: 12px;"><i class="fas fa-file-export"></i> تصدير التقرير PNG</button>
-                <p style="text-align: center; font-size: 0.55rem; color: var(--text-dim); margin-top: 10px;">الحماية: SHA-256 Verified | VIP_ARM Security</p>
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 20px 0;">
+            
+            <div class="control-item">
+                <label>رابط التحقيق (OSINT)</label>
+                <input type="text" id="osintUrl" placeholder="URL..." style="width: 100%; background: #000; border: 1px solid var(--border); padding: 10px; border-radius: 8px; color: var(--cyan); margin-top: 5px;">
             </div>
+            <button class="btn" style="width: 100%;" onclick="addLog('OSINT: Scanning Node...')">فحص المصدر</button>
+        </div>
+        
+        <div class="mini-terminal" id="terminal">
+            <div>> VIP_ARM OS V5.0 Ready...</div>
         </div>
     </aside>
 </div>
 
-<input type="file" id="imageLoader" style="display: none;" accept="image/*">
+<!-- Mobile Navigation Bar -->
+<nav class="mobile-nav">
+    <button class="btn" onclick="togglePanel('analysis')"><i class="fas fa-sliders-h"></i></button>
+    <button class="btn" onclick="togglePanel('ai')"><i class="fas fa-robot"></i></button>
+    <button class="btn" onclick="setFilter('none')"><i class="fas fa-sync"></i></button>
+</nav>
+
+<input type="file" id="fileInput" hidden accept="image/*">
 
 <script>
     const canvas = document.getElementById('mainCanvas');
     const ctx = canvas.getContext('2d');
     const overlay = document.getElementById('overlayCanvas');
     const octx = overlay.getContext('2d');
-    const loader = document.getElementById('imageLoader');
+    const fileInput = document.getElementById('fileInput');
+    
     let rawImg = null;
-    let currentFilter = '';
-    let isModelsLoaded = false;
-    let aiEnabled = false;
+    let activeFilter = 'none';
+    let aiReady = false;
 
-    // تفعيل وإلغاء تفعيل موديل الذكاء الاصطناعي
-    async function toggleAIModule() {
-        if (!aiEnabled) {
-            updateStatus('تحميل_الموديلات');
-            addLog("AI_CORE: جاري تحميل الشبكات العصبية...");
-            
-            try {
-                const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
-                await Promise.all([
-                    faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-                    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL)
-                ]);
-                isModelsLoaded = true;
-                aiEnabled = true;
-                document.getElementById('aiControls').classList.remove('hidden');
-                document.getElementById('aiToggleBtn').innerHTML = '<i class="fas fa-check-circle"></i> محرك AI متصل حالياً';
-                document.getElementById('aiToggleBtn').style.borderColor = 'var(--primary)';
-                addLog("AI_CORE: المحرك جاهز للعمل.");
-                updateStatus('READY');
-            } catch (err) {
-                addLog("ERROR: فشل تحميل الموديلات. تحقق من الاتصال.");
-                updateStatus('ERROR');
-            }
-        } else {
-            aiEnabled = false;
-            document.getElementById('aiControls').classList.add('hidden');
-            document.getElementById('aiToggleBtn').innerHTML = '<i class="fas fa-robot"></i> تفعيل محرك الذكاء الاصطناعي';
-            addLog("AI_CORE: تم إيقاف المحرك.");
-            clearOverlay();
-        }
-    }
+    // تفعيل الرفع
+    function triggerUpload() { fileInput.click(); }
 
-    function switchTab(tab) {
-        ['adjust-panel', 'filters-panel', 'face-panel'].forEach(p => document.getElementById(p).style.display = 'none');
-        document.getElementById(tab + '-panel').style.display = 'block';
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.getAttribute('onclick').includes(tab)));
-    }
-
-    function triggerUpload() { loader.click(); }
-
-    loader.addEventListener('change', function(e) {
+    fileInput.onchange = (e) => {
         const file = e.target.files[0];
-        if (!file) return;
+        if(!file) return;
         const reader = new FileReader();
         reader.onload = (event) => {
             const img = new Image();
             img.onload = () => {
                 rawImg = img;
-                initCanvas();
-                document.getElementById('dropPrompt').style.display = 'none';
-                addLog(`DATA_INJECTED: تم تحميل ${file.name}`);
+                resizeCanvas();
+                document.getElementById('dropPrompt').classList.add('hidden');
+                addLog("System: تم استيراد الصورة بنجاح.");
             };
             img.src = event.target.result;
         };
         reader.readAsDataURL(file);
-    });
+    };
 
-    function initCanvas() {
-        const maxWidth = window.innerWidth * 0.5;
-        const maxHeight = window.innerHeight * 0.65;
-        let ratio = Math.min(maxWidth / rawImg.width, maxHeight / rawImg.height);
+    function resizeCanvas() {
+        if(!rawImg) return;
+        const container = document.querySelector('.canvas-area');
+        const ratio = Math.min(container.clientWidth / rawImg.width, container.clientHeight / rawImg.height) * 0.9;
         canvas.width = overlay.width = rawImg.width * ratio;
         canvas.height = overlay.height = rawImg.height * ratio;
-        draw();
+        applyAll();
     }
 
-    function draw() {
+    function applyAll() {
         if(!rawImg) return;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.filter = `brightness(${document.getElementById('br').value}%) contrast(${document.getElementById('ct').value}%) saturate(${document.getElementById('sat').value}%) blur(${document.getElementById('blur').value}px) ${currentFilter}`;
+        
+        // Update UI labels
+        document.getElementById('val-br').innerText = document.getElementById('br').value + '%';
+        document.getElementById('val-ct').innerText = document.getElementById('ct').value + '%';
+
+        ctx.clearRect(0,0, canvas.width, canvas.height);
+        
+        // Apply Filters
+        let filterString = `brightness(${document.getElementById('br').value}%) contrast(${document.getElementById('ct').value}%) `;
+        
+        switch(activeFilter) {
+            case 'vintage': filterString += 'sepia(50%) contrast(120%)'; break;
+            case 'cold': filterString += 'hue-rotate(180deg) saturate(80%)'; break;
+            case 'urban': filterString += 'contrast(150%) grayscale(30%)'; break;
+            case 'dramatic': filterString += 'saturate(20%) contrast(140%) brightness(80%)'; break;
+        }
+
+        ctx.filter = filterString;
         ctx.drawImage(rawImg, 0, 0, canvas.width, canvas.height);
     }
 
-    function applyMagic(type) {
-        if(!rawImg) return;
-        currentFilter = '';
-        addLog(`FILTER: تم تطبيق ${type.toUpperCase()}`);
+    function setFilter(f) {
+        activeFilter = f;
+        applyAll();
+        addLog(`Effect: تم تطبيق فلتر ${f}`);
+    }
 
-        switch(type) {
-            case 'cyberpunk': currentFilter = 'hue-rotate(300deg) saturate(200%) contrast(120%)'; break;
-            case 'oldfilm': currentFilter = 'sepia(80%) contrast(110%) grayscale(20%)'; break;
-            case 'golden': currentFilter = 'sepia(30%) saturate(150%) brightness(110%)'; break;
-            case 'thermal': currentFilter = 'contrast(150%) saturate(200%) hue-rotate(180deg)'; break;
-            case 'night': currentFilter = 'sepia(100%) hue-rotate(60deg) brightness(120%) contrast(150%)'; break;
-            case 'binary': currentFilter = 'contrast(500%) grayscale(100%)'; break;
-            case 'edges': currentFilter = 'contrast(1000%) grayscale(100%) invert(100%)'; break;
-            case 'scanline': 
-                draw();
-                ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
-                for(let i=0; i<canvas.height; i+=4) ctx.fillRect(0, i, canvas.width, 1);
-                break;
-            case 'matrix':
-                currentFilter = 'grayscale(100%) brightness(80%)';
-                draw();
-                ctx.fillStyle = "#00ff41"; ctx.font = "8px monospace";
-                for(let i=0; i<50; i++) ctx.fillText(Math.random().toString(16), Math.random()*canvas.width, Math.random()*canvas.height);
-                break;
-            case 'none': currentFilter = ''; break;
+    // AI Engine
+    async function initAI() {
+        addLog("AI: جاري تحميل المحرك العصبي...");
+        try {
+            const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
+            await Promise.all([
+                faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+                faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL)
+            ]);
+            aiReady = true;
+            document.getElementById('aiTools').classList.remove('hidden');
+            document.getElementById('aiBtn').innerHTML = "<i class='fas fa-shield-check'></i> المحرك يعمل";
+            addLog("AI: المحرك جاهز للتحليل الجنائي.");
+        } catch(e) {
+            addLog("Error: فشل الاتصال بخوادم الذكاء الاصطناعي.");
         }
-        draw();
     }
 
     async function detectFaces() {
-        if(!rawImg || !aiEnabled) return addLog("ERROR: فعل محرك AI أولاً.");
-        updateStatus('SCANNING');
-        addLog("AI_SCAN: جاري تحليل البصمات البيومترية...");
-        
-        octx.clearRect(0, 0, overlay.width, overlay.height);
-        const detections = await faceapi.detectAllFaces(canvas, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks();
-        
-        if(detections.length === 0) addLog("SCAN_REPORT: لم يتم العثور على وجوه.");
-        else {
-            addLog(`SCAN_REPORT: تم العثور على ${detections.length} هدف.`);
-            faceapi.draw.drawDetections(overlay, detections);
-        }
-        updateStatus('READY');
-    }
-
-    async function toggleAnonymity() {
-        if(!rawImg || !aiEnabled) return addLog("ERROR: فعل محرك AI أولاً.");
+        if(!aiReady) return;
+        octx.clearRect(0,0, overlay.width, overlay.height);
         const detections = await faceapi.detectAllFaces(canvas, new faceapi.TinyFaceDetectorOptions());
-        detections.forEach(det => {
-            const { x, y, width, height } = det.box;
+        if(detections.length > 0) {
+            addLog(`Found: تم رصد ${detections.length} وجه.`);
+            faceapi.draw.drawDetections(overlay, detections);
+        } else {
+            addLog("Search: لم يتم رصد أهداف بيومترية.");
+        }
+    }
+
+    async function anonymize() {
+        if(!aiReady) return;
+        const detections = await faceapi.detectAllFaces(canvas, new faceapi.TinyFaceDetectorOptions());
+        detections.forEach(d => {
+            const { x, y, width, height } = d.box;
             ctx.fillStyle = "black";
-            ctx.fillRect(x, y + height/4, width, height/3); 
-            addLog("FORENSIC: تم تعتيم الهدف.");
+            ctx.fillRect(x, y + height/3, width, height/3);
         });
+        addLog("Security: تم تجهيل الأهداف المرصودة.");
     }
 
-    function clearOverlay() {
-        octx.clearRect(0, 0, overlay.width, overlay.height);
-        addLog("SYSTEM: تم مسح طبقة التحليلات.");
-    }
-
-    function extractFaceData() {
-        if(!rawImg) return;
-        addLog("DATA_EXTRACT: استخراج الميتا-داتا...");
-        addLog(`RESOLUTION: ${rawImg.width}x${rawImg.height}px`);
-        addLog(`HASH: VIP_SHA256_${Math.random().toString(36).substring(7).toUpperCase()}`);
-    }
-
-    function cleanExif() {
-        addLog("SECURITY: تم مسح بيانات EXIF بنجاح.");
+    // UI Helpers
+    function togglePanel(id) {
+        const panels = ['panel-analysis', 'panel-ai'];
+        panels.forEach(p => {
+            const el = document.getElementById(p);
+            if(p === 'panel-' + id) el.classList.toggle('active');
+            else el.classList.remove('active');
+        });
     }
 
     function addLog(msg) {
         const term = document.getElementById('terminal');
-        const p = document.createElement('p');
-        p.innerHTML = `<span style="color: var(--text-dim)">[${new Date().toLocaleTimeString()}]</span> ${msg}`;
-        term.prepend(p);
-    }
-
-    function updateStatus(status) {
-        const node = document.getElementById('statusIndicator');
-        node.innerText = `● SYSTEM_${status}`;
-        node.style.color = (status === 'READY' || status === 'جاهز للعمل') ? '#10b981' : '#ff007a';
+        const line = document.createElement('div');
+        line.innerHTML = `<span style="color:rgba(255,255,255,0.3)">[${new Date().toLocaleTimeString()}]</span> ${msg}`;
+        term.prepend(line);
     }
 
     function exportArt() {
-        const exportCanvas = document.createElement('canvas');
-        exportCanvas.width = canvas.width;
-        exportCanvas.height = canvas.height;
-        const exCtx = exportCanvas.getContext('2d');
-        exCtx.drawImage(canvas, 0, 0);
-        exCtx.drawImage(overlay, 0, 0);
-        
+        if(!rawImg) return;
         const link = document.createElement('a');
-        link.download = `VIP_ARM_RESULT_${Date.now()}.png`;
-        link.href = exportCanvas.toDataURL();
+        link.download = `VIP_ARM_V5_${Date.now()}.png`;
+        link.href = canvas.toDataURL();
         link.click();
-        addLog("SYSTEM: تم تصدير الملف بنجاح.");
     }
 
-    // ربط السلايدرز
-    document.querySelectorAll('input[type="range"]').forEach(i => {
-        i.addEventListener('input', (e) => {
-            document.getElementById(`val-${e.target.id}`).innerText = e.target.value + (e.target.id === 'blur' ? 'px' : '%');
-            draw();
-        });
-    });
+    window.onresize = resizeCanvas;
 </script>
 </body>
 </html>
