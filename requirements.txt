@@ -2,11 +2,12 @@ Flask
 flask-cors
 Flask-SocketIO
 setuptools
-gunicorn>=20.1.0
+gunicorn
 requests
 yt-dlp
 moviepy
-Pillow<12.0.0
+Pillow
 gTTS
 python-dotenv
-eventlet==0.33.3
+
+

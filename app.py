@@ -28,7 +28,7 @@ CORS(app)
 socketio = SocketIO(
     app,
     cors_allowed_origins="*",
-    async_mode='threading', 
+    async_mode='threading',
     ping_timeout=60,
     ping_interval=25,
     engineio_logger=False
@@ -45,9 +45,11 @@ for folder in [DOWNLOAD_FOLDER, STUDIO_FOLDER, UPLOAD_FOLDER]:
 
 # --- وظائف المساعدة المعالجة ---
 def format_size(bytes_num):
-    if not bytes_num: return "--"
+    if not bytes_num: 
+        return "--"
     for unit in ['B', 'KB', 'MB', 'GB']:
-        if bytes_num < 1024: return f"{bytes_num:.1f} {unit}"
+        if bytes_num < 1024: 
+            return f"{bytes_num:.1f} {unit}"
         bytes_num /= 1024
 
 def get_ydl_opts(custom_out=None):
@@ -84,7 +86,8 @@ def dub_video(input_path, lang='ar'):
             final_video = video.set_audio(audio_clip)
             final_video.write_videofile(output_path, codec="libx264", audio_codec="aac", logger=None)
     finally:
-        if os.path.exists(temp_audio): os.remove(temp_audio)
+        if os.path.exists(temp_audio): 
+            os.remove(temp_audio)
     return output_path
 
 # --- Socket.IO Communication ---
@@ -117,7 +120,8 @@ def chat_page():
 def proxy_download():
     target_url = request.args.get('url')
     filename = request.args.get('filename', 'VIP_ARM_Capture.mp4')
-    if not target_url: return "Target URL is missing", 400
+    if not target_url: 
+        return "Target URL is missing", 400
     try:
         req = requests.get(target_url, stream=True, timeout=60, verify=False)
         return Response(
@@ -134,20 +138,24 @@ def proxy_download():
 def web_scanner():
     data = request.json
     target_url = data.get('url')
-    if not target_url: return jsonify({"error": "Missing Target URL"}), 400
+    if not target_url: 
+        return jsonify({"error": "Missing Target URL"}), 400
     try:
-        if not target_url.startswith('http'): target_url = 'https://' + target_url
+        if not target_url.startswith('http'): 
+            target_url = 'https://' + target_url
         response = requests.get(target_url, timeout=10, verify=True)
         headers = response.headers
         security_headers = ["Content-Security-Policy", "Strict-Transport-Security", "X-Content-Type-Options", "X-Frame-Options", "X-XSS-Protection"]
         results = {h: {"status": "✅ Found" if h in headers else "❌ Missing", "value": headers.get(h, "N/A")} for h in security_headers}
         return jsonify({"target": target_url, "status_code": response.status_code, "server": headers.get("Server", "Hidden"), "security_report": results})
-    except Exception as e: return jsonify({"error": str(e)}), 500
+    except Exception as e: 
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
     file = request.files.get('image') or request.files.get('file')
-    if not file: return jsonify({"error": "No Payload"}), 400
+    if not file: 
+        return jsonify({"error": "No Payload"}), 400
     filename = f"VIP_{uuid.uuid4().hex}_{file.filename}"
     filepath = os.path.join(UPLOAD_FOLDER, filename)
     file.save(filepath)
@@ -159,7 +167,8 @@ def unified_handler():
     data = request.json
     url = data.get('url')
     mode = data.get('mode')
-    if not url: return jsonify({"status": "failed", "message": "No URL provided"}), 400
+    if not url: 
+        return jsonify({"status": "failed", "message": "No URL provided"}), 400
     try:
         if not mode:
             ydl_opts_info = {'quiet': True, 'nocheckcertificate': True}
@@ -180,7 +189,8 @@ def unified_handler():
             with yt_dlp.YoutubeDL(get_ydl_opts()) as ydl:
                 info = ydl.extract_info(url, download=True)
                 raw_path = ydl.prepare_filename(info)
-                if not os.path.exists(raw_path): raw_path = os.path.splitext(raw_path)[0] + ".mp4"
+                if not os.path.exists(raw_path): 
+                    raw_path = os.path.splitext(raw_path)[0] + ".mp4"
 
             final_path = create_shorts(raw_path) if mode == 'shorts' else dub_video(raw_path) if mode == 'dub' else raw_path
 
@@ -188,8 +198,10 @@ def unified_handler():
             def cleanup(response):
                 try:
                     for f in {raw_path, final_path}:
-                        if f and os.path.exists(f): os.remove(f)
-                except: pass
+                        if f and os.path.exists(f): 
+                            os.remove(f)
+                except: 
+                    pass
                 return response
             return send_file(final_path, as_attachment=True)
     except Exception as e:
@@ -198,21 +210,25 @@ def unified_handler():
 @app.route('/api/exif', methods=['POST'])
 def forensic_core():
     file = request.files.get('image')
-    if not file: return jsonify({"error": "No Image"}), 400
+    if not file: 
+        return jsonify({"error": "No Image"}), 400
     try:
         img = Image.open(file)
         raw_exif = img._getexif()
-        if not raw_exif: return jsonify({"status": "clear", "message": "Zero Metadata"})
+        if not raw_exif: 
+            return jsonify({"status": "clear", "message": "Zero Metadata"})
         report = {TAGS.get(tid, tid): str(val) for tid, val in raw_exif.items() if not isinstance(val, bytes)}
         return jsonify({"status": "extracted", "forensic_data": report})
-    except Exception as e: return jsonify({"error": str(e)}), 500
+    except Exception as e: 
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/<page>')
 def serve_pages(page):
     if os.path.exists(page) and not page.endswith('.html'):
         return send_file(page)
     target = page if page.endswith('.html') else f"{page}.html"
-    if os.path.exists(target): return render_template(target)
+    if os.path.exists(target): 
+        return render_template(target)
     return render_template('index.html'), 404
 
 if __name__ == '__main__':
