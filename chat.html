@@ -5,66 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VIP_ARM | Private Crypto Chat V5.0</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <!-- مكتبة التشفير المضافة -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-    
-    <!-- الكود الأصلي الخاص بك (ممنوع الحذف) -->
+
     <style>
-        :root {
-            --bg: #020617; --neon: #00f2ff; --glass: rgba(15, 23, 42, 0.9);
-        }
+        :root { --bg: #020617; --neon: #00f2ff; --glass: rgba(15, 23, 42, 0.9); }
         body { background: var(--bg); color: white; font-family: 'Cairo', sans-serif; height: 100vh; overflow: hidden; display: flex; margin: 0; }
-        
-        /* Sidebar Chat Selection */
         .chat-nav { width: 300px; border-left: 1px solid #1e293b; background: var(--glass); display: flex; flex-direction: column; z-index: 10; transition: 0.5s; }
         .nav-header { padding: 20px; border-bottom: 1px solid #1e293b; text-align: center; }
-        
-        /* Chat Area */
         .chat-main { flex: 1; display: flex; flex-direction: column; background: radial-gradient(circle at center, #0f172a 0%, #020617 100%); position: relative; z-index: 5; }
         .chat-header { padding: 15px 25px; background: var(--glass); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; }
-        
         .messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
-        .msg { max-width: 70%; padding: 12px; border-radius: 15px; font-size: 0.9rem; position: relative; }
+        .msg { max-width: 70%; padding: 12px; border-radius: 15px; font-size: 0.9rem; position: relative; animation: fadeIn 0.3s ease-out; }
         .msg.sent { align-self: flex-start; background: #1e40af; border-bottom-left-radius: 2px; }
         .msg.received { align-self: flex-end; background: #334155; border-bottom-right-radius: 2px; }
-
-        /* Input Area */
         .input-area { padding: 20px; background: var(--glass); display: flex; gap: 10px; align-items: center; }
         .input-area input { flex: 1; background: #0f172a; border: 1px solid #1e293b; padding: 12px; border-radius: 25px; color: white; outline: none; }
-        
         .btn-icon { background: none; border: none; color: var(--neon); cursor: pointer; font-size: 1.2rem; transition: 0.3s; }
         .btn-icon:hover { transform: scale(1.1); text-shadow: 0 0 10px var(--neon); }
-
-        .modal-invite { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1e293b; padding: 20px; border-radius: 12px; border: 1px solid var(--neon); display: none; z-index: 100; }
-    </style>
-
-    <!-- إضافات التطوير VIP للواجهة (تكملة للموجود) -->
-    <style>
-        .messages::-webkit-scrollbar { width: 5px; }
-        .messages::-webkit-scrollbar-thumb { background: var(--neon); border-radius: 10px; }
-        .msg { animation: fadeIn 0.3s ease-out; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .btn-execute { transition: 0.3s; position: relative; overflow: hidden; }
-        .btn-execute:active { transform: scale(0.95); }
-        .chat-main::before {
-            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
-            opacity: 0.05; pointer-events: none;
-        }
-        #encryption-status { animation: blink 2s infinite; }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-        .modal-invite { backdrop-filter: blur(10px); box-shadow: 0 0 30px rgba(0, 242, 255, 0.2); border-radius: 20px; text-align: center; }
-
-        /* --- التطوير الجديد V5.0 (Matrix & System Status) --- */
+        .modal-invite { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1e293b; padding: 20px; border-radius: 20px; border: 1px solid var(--neon); display: none; z-index: 100; backdrop-filter: blur(10px); text-align: center; }
         #matrix-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0.03; pointer-events: none; }
         .system-footer { height: 25px; background: #000; border-top: 1px solid #1e293b; display: flex; align-items: center; padding: 0 15px; font-size: 10px; color: var(--neon); font-family: monospace; }
         .status-dot { width: 6px; height: 6px; background: #22c55e; border-radius: 50%; display: inline-block; margin-right: 5px; box-shadow: 0 0 5px #22c55e; }
-        .typing-indicator { font-size: 10px; color: #64748b; padding-left: 10px; display: none; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
-<!-- Canvas لخلفية Matrix -->
 <canvas id="matrix-canvas"></canvas>
 
 <div class="chat-nav" id="sidebar">
@@ -72,8 +38,8 @@
         <h3 style="color:var(--neon); letter-spacing: 2px;">VIP <span style="color:white">CHAT</span></h3>
     </div>
     <div style="padding:15px; display:grid; gap:10px;">
-        <button class="btn-execute" onclick="joinGlobal()" style="background:#334155; color:white; padding:12px; border-radius:12px; border:1px solid #475569; cursor:pointer; font-family:'Cairo';">الدردشة العالمية <i class="fas fa-globe"></i></button>
-        <button class="btn-execute" onclick="createPrivateRoom()" style="background:var(--neon); color:#000; padding:12px; border-radius:12px; border:none; cursor:pointer; font-weight:bold; font-family:'Cairo';">أنشئ غرفتك الخاصة <i class="fas fa-plus"></i></button>
+        <button onclick="joinGlobal()" style="background:#334155; color:white; padding:12px; border-radius:12px; border:1px solid #475569; cursor:pointer; font-family:'Cairo';">الدردشة العالمية <i class="fas fa-globe"></i></button>
+        <button onclick="createPrivateRoom()" style="background:var(--neon); color:#000; padding:12px; border-radius:12px; border:none; cursor:pointer; font-weight:bold; font-family:'Cairo';">أنشئ غرفتك الخاصة <i class="fas fa-plus"></i></button>
     </div>
     <div style="padding: 20px; font-size: 12px; color: #64748b; border-top: 1px solid #1e293b; margin-top: auto;">
         <i class="fas fa-circle" style="color: var(--neon); font-size: 8px;"></i> Kernel-0x0: Online
@@ -83,66 +49,107 @@
 <div class="chat-main">
     <div class="chat-header">
         <div id="room-info">
-            <span id="room-name" style="font-weight: bold; font-size: 1.1rem;">اختر غرفة للبدء</span>
-            <small id="encryption-status" style="display:block; color:var(--neon); font-size:10px; font-family: monospace;">[SECURE TUNNEL ACTIVE]</small>
+            <span id="room-name" style="font-weight: bold; font-size: 1.1rem;">جاري الاتصال...</span>
+            <small id="encryption-status" style="display:block; color:var(--neon); font-size:10px; font-family: monospace;">[ENCRYPTED TUNNEL]</small>
         </div>
         <div style="display: flex; gap: 15px;">
-            <button class="btn-icon" onclick="toggleSidebar()" title="عرض/إخفاء القائمة"><i class="fas fa-bars"></i></button>
-            <button class="btn-icon" onclick="clearMessages()" title="مسح المحادثة"><i class="fas fa-trash-alt" style="font-size: 1rem; color: #ef4444;"></i></button>
-            <button class="btn-icon" onclick="showInvite()" title="إضافة أعضاء"><i class="fas fa-user-plus"></i></button>
+            <button class="btn-icon" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+            <button class="btn-icon" onclick="clearMessages()"><i class="fas fa-trash-alt" style="color: #ef4444;"></i></button>
+            <button class="btn-icon" onclick="showInvite()"><i class="fas fa-user-plus"></i></button>
         </div>
     </div>
 
-    <div class="messages" id="message-container">
-        <div style="text-align:center; padding: 20px; color: #475569; font-size: 12px;">
-            <i class="fas fa-user-shield" style="font-size: 2rem; margin-bottom: 10px; display: block;"></i>
-            مرحباً بك يا <b>VIP_ARM</b> في بيئة التواصل السري.
-        </div>
-    </div>
-
-    <div class="typing-indicator" id="typing">جاري كتابة رد مشفر...</div>
+    <div class="messages" id="message-container"></div>
 
     <div class="input-area">
-        <label class="btn-icon" title="ارسال وسائط"><i class="fas fa-paperclip"></i><input type="file" hidden id="fileInput" accept="image/*"></label>
-        <button class="btn-icon" id="voiceBtn" title="تسجيل صوتي" onclick="toggleVoice()"><i class="fas fa-microphone"></i></button>
-        <input type="text" id="msgInput" placeholder="اكتب رسالتك المشفرة هنا..." onkeypress="handleKeyPress(event)">
-        <button class="btn-icon" onclick="sendMessage()" id="sendBtn"><i class="fas fa-paper-plane"></i></button>
+        <label class="btn-icon"><i class="fas fa-image"></i><input type="file" hidden id="fileInput" accept="image/*"></label>
+        <input type="text" id="msgInput" placeholder="اكتب رسالتك المشفرة..." onkeypress="if(event.key==='Enter') sendMessage()">
+        <button class="btn-icon" onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
     </div>
 
     <div class="system-footer">
-        <span class="status-dot"></span> 
-        CPU: <span id="cpu-val">04%</span> | RAM: <span id="ram-val">1.2GB</span> | ENCRYPTION: AES-256-GCM
+        <span class="status-dot"></span>
+        CPU: <span id="cpu-val">--</span> | RAM: <span id="ram-val">--</span> | PROTOCOL: AES-256
     </div>
 </div>
 
 <div class="modal-invite" id="inviteModal">
     <i class="fas fa-link" style="color: var(--neon); font-size: 2rem; margin-bottom: 10px;"></i>
-    <h4 style="margin: 0;">رابط دعوة الغرفة الخاصة</h4>
-    <p style="font-size:12px; margin:10px 0; color: #94a3b8;">أرسل هذا الرابط لصديقك للدخول مباشرة:</p>
-    <div style="display: flex; gap: 5px;">
-        <input type="text" id="inviteLink" readonly style="flex: 1; background:#0f172a; color:var(--neon); border:1px solid #1e293b; padding:10px; border-radius: 8px; font-family: monospace;">
-        <button onclick="copyLink()" style="background: var(--neon); border:none; padding: 0 15px; border-radius: 8px; cursor: pointer;"><i class="fas fa-copy"></i></button>
+    <h4>رابط دخول الغرفة</h4>
+    <div style="display: flex; gap: 5px; margin: 15px 0;">
+        <input type="text" id="inviteLink" readonly style="flex: 1; background:#0f172a; color:var(--neon); border:1px solid #1e293b; padding:10px; border-radius: 8px;">
+        <button onclick="copyLink()" style="background: var(--neon); border:none; padding: 0 15px; border-radius: 8px;"><i class="fas fa-copy"></i></button>
     </div>
-    <button onclick="closeInvite()" style="margin-top:20px; padding:8px 25px; background: #334155; color: white; border: none; border-radius: 8px; cursor: pointer; font-family: 'Cairo';">إغلاق النافذة</button>
+    <button onclick="closeInvite()" style="padding:8px 25px; background: #334155; color: white; border: none; border-radius: 8px;">إغلاق</button>
 </div>
 
-<!-- الكود الأصلي الخاص بك (ممنوع الحذف) -->
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
     const socket = io();
-    let currentRoom = "";
-    const SECRET_KEY = "VIP_ARM_KERNEL_0x0"; // مفتاح التشفير الافتراضي
+    let currentRoom = "global";
+    const SECRET_KEY = "VIP_ARM_KERNEL_0x0";
+
+    // تفعيل دخول الغرفة تلقائياً عند فتح الرابط
+    window.onload = () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const room = urlParams.get('room');
+        if(room) {
+            joinRoom(room);
+        } else {
+            joinGlobal();
+        }
+        initMatrix();
+        simulateStats();
+    };
+
+    function joinRoom(roomId) {
+        currentRoom = roomId;
+        socket.emit('join', { room: roomId, user: "VIP_ARM" });
+        document.getElementById('room-name').innerText = roomId === 'global' ? "الدردشة العالمية" : "غرفة خاصة: " + roomId;
+        logSystem(`تم تفعيل التشفير للغرفة: ${roomId}`);
+    }
+
+    function joinGlobal() {
+        window.history.pushState({}, '', window.location.pathname);
+        joinRoom('global');
+    }
 
     function createPrivateRoom() {
-        const roomId = "room_" + Math.random().toString(36).substr(2, 9);
-        currentRoom = roomId;
+        const roomId = "vip_" + Math.random().toString(36).substr(2, 6);
         window.history.pushState({}, '', `?room=${roomId}`);
-        document.getElementById('room-name').innerText = "غرفة خاصة: " + roomId;
-        logSystem(`تم إنشاء الغرفة ${roomId} بتشفير AES`);
+        joinRoom(roomId);
+    }
+
+    function sendMessage() {
+        const input = document.getElementById('msgInput');
+        if(!input.value) return;
+
+        const encryptedMsg = CryptoJS.AES.encrypt(input.value, SECRET_KEY).toString();
+        socket.emit('message', { room: currentRoom, msg: encryptedMsg, user: "VIP_ARM" });
+        
+        appendMessage({ msg: input.value, user: "VIP_ARM" }, 'sent');
+        input.value = "";
+    }
+
+    // استقبال الرسائل من الآخرين في نفس الغرفة
+    socket.on('message', (data) => {
+        if(data.user !== "VIP_ARM") {
+            const decryptedBytes = CryptoJS.AES.decrypt(data.msg, SECRET_KEY);
+            const originalMsg = decryptedBytes.toString(CryptoJS.enc.Utf8);
+            appendMessage({ msg: originalMsg, user: data.user }, 'received');
+        }
+    });
+
+    function appendMessage(data, type) {
+        const container = document.getElementById('message-container');
+        const div = document.createElement('div');
+        div.className = `msg ${type}`;
+        div.innerHTML = `<strong>${data.user}:</strong> <div>${data.msg}</div>`;
+        container.appendChild(div);
+        container.scrollTop = container.scrollHeight;
     }
 
     function showInvite() {
-        if(!currentRoom) return alert("أنشئ غرفة أولاً!");
         const modal = document.getElementById('inviteModal');
         const link = window.location.origin + window.location.pathname + "?room=" + currentRoom;
         document.getElementById('inviteLink').value = link;
@@ -151,121 +158,49 @@
 
     function closeInvite() { document.getElementById('inviteModal').style.display = 'none'; }
 
-    // تحسين الإرسال بالتشفير الفعلي
-    function sendMessage() {
-        const input = document.getElementById('msgInput');
-        if(!input.value || !currentRoom) return;
-        
-        // تشفير الرسالة قبل الإرسال
-        const encryptedMsg = CryptoJS.AES.encrypt(input.value, SECRET_KEY).toString();
-        
-        const data = {
-            room: currentRoom,
-            msg: encryptedMsg, 
-            user: "VIP_ARM",
-            original: input.value // للعرض المحلي فقط
-        };
-
-        socket.emit('message', data);
-        appendMessage({msg: input.value, user: "VIP_ARM"}, 'sent');
-        input.value = "";
-        playAudioEffect('https://www.soundjay.com/buttons/button-20.mp3');
-    }
-
-    function appendMessage(data, type) {
-        const container = document.getElementById('message-container');
-        const div = document.createElement('div');
-        div.className = `msg ${type}`;
-        div.innerHTML = `<div>${data.msg}</div><small style="font-size:8px; opacity:0.5">${new Date().toLocaleTimeString()}</small>`;
-        container.appendChild(div);
-        container.scrollTop = container.scrollHeight;
-    }
-
-    function logSystem(m) {
-        const container = document.getElementById('message-container');
-        container.innerHTML += `<div style="text-align:center; font-size:10px; color:var(--neon); margin: 10px 0; font-family:monospace;">> system_exec: ${m}</div>`;
-    }
-
-    window.onload = () => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const room = urlParams.get('room');
-        if(room) {
-            currentRoom = room;
-            document.getElementById('room-name').innerText = "غرفة خاصة: " + room;
-            logSystem("دخلت إلى المحادثة المشفرة بنجاح");
-        }
-        initMatrix();
-        simulateStats();
-    };
-
-    // --- وظائف إضافية لتطوير الواجهة (VIP) ---
     function copyLink() {
         const copyText = document.getElementById("inviteLink");
         copyText.select();
         document.execCommand("copy");
-        logSystem("تم نسخ رابط الدعوة للحافظة");
+        alert("تم نسخ الرابط! أرسله لصديقك.");
     }
 
-    function clearMessages() {
-        if(confirm("سيتم تدمير سجل الرسائل محلياً، هل أنت متأكد؟")) {
-            document.getElementById('message-container').innerHTML = "";
-            logSystem("تم تنفيذ عملية تدمير السجلات");
-        }
-    }
-
-    function toggleVoice() {
-        const btn = document.getElementById('voiceBtn');
-        btn.style.color = (btn.style.color === 'red') ? 'var(--neon)' : 'red';
-        if(btn.style.color === 'red') {
-            logSystem("Recording audio...");
-        } else {
-            logSystem("Audio chunk encrypted & sent");
-        }
+    function logSystem(m) {
+        const container = document.getElementById('message-container');
+        container.innerHTML += `<div style="text-align:center; font-size:10px; color:var(--neon); margin: 10px 0; font-family:monospace;">> ${m}</div>`;
     }
 
     document.getElementById('fileInput').addEventListener('change', function(e) {
         if (this.files && this.files[0]) {
             const reader = new FileReader();
             reader.onload = function(e) {
-                appendMessage({msg: `<img src="${e.target.result}" style="max-width:100%; border-radius:10px; border:1px solid var(--neon);">`, user: "VIP_ARM"}, 'sent');
+                const imgTag = `<img src="${e.target.result}" style="max-width:100%; border-radius:10px;">`;
+                socket.emit('message', { room: currentRoom, msg: CryptoJS.AES.encrypt(imgTag, SECRET_KEY).toString(), user: "VIP_ARM" });
+                appendMessage({ msg: imgTag, user: "VIP_ARM" }, 'sent');
             };
             reader.readAsDataURL(this.files[0]);
         }
     });
 
-    // --- التطوير الجديد V5.0 (Scripts) ---
-    function handleKeyPress(e) {
-        if(e.key === 'Enter') sendMessage();
-        document.getElementById('typing').style.display = 'block';
-        clearTimeout(window.typingTimeout);
-        window.typingTimeout = setTimeout(() => { document.getElementById('typing').style.display = 'none'; }, 1000);
-    }
-
     function toggleSidebar() {
-        const sidebar = document.getElementById('sidebar');
-        sidebar.style.width = (sidebar.style.width === '0px') ? '300px' : '0px';
+        const s = document.getElementById('sidebar');
+        s.style.width = (s.style.width === '0px') ? '300px' : '0px';
     }
 
-    function playAudioEffect(url) {
-        const audio = new Audio(url);
-        audio.volume = 0.2;
-        audio.play().catch(()=>{});
+    function clearMessages() {
+        if(confirm("مسح المحادثة؟")) document.getElementById('message-container').innerHTML = "";
     }
 
     function initMatrix() {
         const canvas = document.getElementById('matrix-canvas');
         const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        const fontSize = 10;
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        const letters = "01"; const fontSize = 10;
         const columns = canvas.width / fontSize;
         const drops = Array(Math.floor(columns)).fill(1);
         function draw() {
-            ctx.fillStyle = "rgba(2, 6, 23, 0.05)";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "#00f2ff";
-            ctx.font = fontSize + "px monospace";
+            ctx.fillStyle = "rgba(2, 6, 23, 0.05)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#00f2ff"; ctx.font = fontSize + "px monospace";
             for(let i = 0; i < drops.length; i++) {
                 const text = letters.charAt(Math.floor(Math.random() * letters.length));
                 ctx.fillText(text, i * fontSize, drops[i] * fontSize);
@@ -278,8 +213,8 @@
 
     function simulateStats() {
         setInterval(() => {
-            document.getElementById('cpu-val').innerText = (Math.random() * 10 + 2).toFixed(0) + "%";
-            document.getElementById('ram-val').innerText = (Math.random() * 0.5 + 1.1).toFixed(1) + "GB";
+            document.getElementById('cpu-val').innerText = (Math.random() * 5 + 1).toFixed(0) + "%";
+            document.getElementById('ram-val').innerText = (Math.random() * 0.2 + 1.0).toFixed(1) + "GB";
         }, 3000);
     }
 </script>
