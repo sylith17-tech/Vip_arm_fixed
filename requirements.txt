@@ -5,8 +5,8 @@ python-telegram-bot
 moviepy
 requests
 python-dotenv
-gunicorn
-eventlet
+gunicorn>=20.1.0
+eventlet>=0.41.0
 Pillow<12.0.0
 numpy
 yt-dlp
