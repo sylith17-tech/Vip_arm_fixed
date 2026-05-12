@@ -3,6 +3,11 @@ import yt_dlp
 import logging
 import uuid
 import requests
+# إضافة استيراد eventlet و SocketIO للإصلاح
+import eventlet
+eventlet.monkey_patch()
+from flask_socketio import SocketIO
+
 from flask import Flask, render_template, request, jsonify, send_file, after_this_request, Response, stream_with_context
 from flask_cors import CORS
 from PIL import Image
@@ -21,6 +26,8 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__, template_folder='.', static_folder='.')
 CORS(app)
+# تهيئة SocketIO للإصلاح
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
 # إعداد المجلدات
 DOWNLOAD_FOLDER = os.path.join(os.getcwd(), 'downloads')
@@ -162,8 +169,7 @@ def unified_handler():
                             "filesize": format_size(f.get('filesize') or f.get('filesize_approx')),
                             "url": f.get('url'),
                             "proxy_url": f"/api/proxy_download?url={requests.utils.quote(f.get('url'))}&filename={requests.utils.quote(info.get('title', 'video'))}.{f.get('ext')}"
-                        })
-                return jsonify({
+                        })                                                                                                                                                             return jsonify({
                     "status": "success",
                     "title": info.get('title'),
                     "thumbnail": info.get('thumbnail'),
@@ -199,8 +205,7 @@ def forensic_core():
         if not raw_exif: return jsonify({"status": "clear", "message": "Zero Metadata"})
         report = {TAGS.get(tid, tid): str(val) for tid, val in raw_exif.items() if not isinstance(val, bytes)}
         return jsonify({"status": "extracted", "forensic_data": report})
-    except Exception as e: return jsonify({"error": str(e)}), 500
-
+    except Exception as e: return jsonify({"error": str(e)}), 500                       
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port, threaded=True)
+    port = int(os.environ.get("PORT", 10000))
+    socketio.run(app, host='0.0.0.0', port=port)
