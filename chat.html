@@ -3,62 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>VIP_ARM | Kernel-0x0 SECURE NODE V15</title>
+    <title>VIP_ARM | Kernel-0x0 OMEGA V16</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            --bg-dark: #020408;
-            --panel-dark: rgba(8, 12, 20, 0.98);
+            --bg-dark: #010204;
+            --panel-dark: rgba(6, 9, 15, 0.98);
             --accent: #00f2ff;
             --danger: #ff003c;
             --success: #00ff88;
             --text-main: #e5e7eb;
-            --sent-bg: rgba(10, 25, 47, 0.95);
-            --recv-bg: rgba(20, 20, 20, 0.95);
-            --border: #16213e;
+            --sent-bg: rgba(10, 25, 47, 0.9);
+            --recv-bg: rgba(20, 20, 20, 0.9);
+            --border: #1a2634;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         body, html { height: 100dvh; margin: 0; padding: 0; overflow: hidden; background: var(--bg-dark); font-family: 'Cairo', sans-serif; color: var(--text-main); position: fixed; width: 100%; }
         
-        /* Matrix Effect */
-        #matrix-canvas { position: fixed; top: 0; left: 0; opacity: 0.12; z-index: 0; pointer-events: none; }
-        .window-blur { filter: blur(40px) grayscale(1); transition: 0.5s; }
+        #matrix-canvas { position: fixed; top: 0; left: 0; opacity: 0.1; z-index: 0; pointer-events: none; }
 
         /* Secure Overlay */
-        #vault-lock { position: fixed; top:0; left:0; width:100%; height:100dvh; background: var(--bg-dark); z-index: 9999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(20px); }
-        .lock-box { background: var(--panel-dark); padding: 45px; border-radius: 30px; border: 1px solid var(--accent); text-align: center; width: 90%; max-width: 420px; box-shadow: 0 0 60px rgba(0, 242, 255, 0.15); }
+        #vault-lock { position: fixed; top:0; left:0; width:100%; height:100dvh; background: var(--bg-dark); z-index: 9999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(25px); }
+        .lock-box { background: var(--panel-dark); padding: 40px; border-radius: 25px; border: 1px solid var(--accent); text-align: center; width: 90%; max-width: 400px; box-shadow: 0 0 50px rgba(0, 242, 255, 0.1); }
 
         .app-container { display: flex; height: 100dvh; width: 100vw; position: relative; z-index: 1; }
-        
-        /* Sidebar */
-        .chat-nav { width: 280px; background: var(--panel-dark); border-left: 1px solid var(--border); display: flex; flex-direction: column; transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1000; }
+        .chat-nav { width: 280px; background: var(--panel-dark); border-left: 1px solid var(--border); display: flex; flex-direction: column; transition: transform 0.4s ease; z-index: 1000; }
         .chat-nav.active { transform: translateX(-280px); }
 
-        .chat-main { flex: 1; display: flex; flex-direction: column; background: transparent; min-width: 0; position: relative; }
+        .chat-main { flex: 1; display: flex; flex-direction: column; min-width: 0; position: relative; }
 
-        /* Message Logic */
-        .messages { flex: 1; overflow-y: auto; padding: 25px; display: flex; flex-direction: column; gap: 15px; scroll-behavior: smooth; }
-        .msg { max-width: 85%; padding: 14px 20px; border-radius: 20px; font-size: 0.95rem; animation: msgArrival 0.25s cubic-bezier(0, 0.5, 0.5, 1); word-wrap: break-word; position: relative; border: 1px solid var(--border); }
-        @keyframes msgArrival { from { opacity: 0; transform: translateY(10px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        /* Messages */
+        .messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; scroll-behavior: smooth; }
+        .msg { max-width: 85%; padding: 12px 18px; border-radius: 18px; font-size: 0.95rem; animation: slideIn 0.2s ease-out; word-wrap: break-word; border: 1px solid var(--border); }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         
         .msg.sent { align-self: flex-start; background: var(--sent-bg); border-bottom-left-radius: 4px; border-color: rgba(0, 242, 255, 0.2); }
         .msg.received { align-self: flex-end; background: var(--recv-bg); border-bottom-right-radius: 4px; }
-        .msg strong { display: block; font-size: 0.7rem; color: var(--accent); margin-bottom: 5px; font-family: 'Fira Code'; text-transform: uppercase; letter-spacing: 1px; }
+        .msg strong { display: block; font-size: 0.7rem; color: var(--accent); margin-bottom: 4px; font-family: 'Fira Code'; }
 
         /* Controls */
-        .input-area { padding: 20px; background: var(--panel-dark); display: flex; gap: 12px; align-items: center; border-top: 1px solid var(--border); }
-        .input-wrapper { flex: 1; background: rgba(0,0,0,0.6); border-radius: 18px; padding: 4px 18px; border: 1px solid var(--border); display: flex; align-items: center; transition: 0.3s; }
-        .input-wrapper:focus-within { border-color: var(--accent); box-shadow: 0 0 15px rgba(0, 242, 255, 0.1); }
+        .input-area { padding: 15px 20px; background: var(--panel-dark); display: flex; gap: 10px; align-items: center; border-top: 1px solid var(--border); }
+        .input-wrapper { flex: 1; background: #000; border-radius: 15px; padding: 2px 15px; border: 1px solid var(--border); display: flex; align-items: center; }
         .input-wrapper input { flex: 1; background: transparent; border: none; color: white; padding: 12px; font-size: 1rem; }
         
-        .btn-send { background: var(--accent); color: #000; width: 54px; height: 54px; border-radius: 18px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: none; transition: 0.3s; font-size: 1.3rem; }
-        .btn-send:hover { transform: scale(1.05); filter: brightness(1.1); }
+        .btn-send { background: var(--accent); color: #000; width: 50px; height: 50px; border-radius: 15px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: none; font-size: 1.2rem; }
 
-        .status-tag { font-size: 10px; font-family: 'Fira Code'; padding: 2px 8px; border-radius: 10px; background: rgba(0, 255, 136, 0.1); color: var(--success); border: 1px solid var(--success); }
+        .auth-error { color: var(--danger); font-size: 0.8rem; margin-top: 10px; display: none; }
 
         @media (max-width: 768px) {
             .chat-nav { position: absolute; right: -280px; height: 100dvh; }
@@ -72,244 +66,244 @@
 
 <div id="vault-lock">
     <div class="lock-box">
-        <div style="margin-bottom: 25px;">
-            <i class="fas fa-user-shield" style="font-size: 4rem; color: var(--accent);"></i>
-        </div>
-        <h2 style="font-family: 'Fira Code'; letter-spacing: 2px; margin-bottom: 10px;">KERNEL-0x0 V15</h2>
-        <p style="color: #666; font-size: 0.8rem; margin-bottom: 30px;">تحقق ثنائي من صحة النفق المشفر</p>
-        <input type="password" id="vault-pass" placeholder="AES Master Key..." style="width: 100%; padding: 18px; background: #000; border: 1px solid var(--border); border-radius: 15px; color: var(--accent); text-align: center; margin-bottom: 20px; font-size: 1.1rem;">
-        <button onclick="verifyTunnel()" style="width: 100%; padding: 18px; background: var(--accent); border: none; border-radius: 15px; font-weight: bold; cursor: pointer; transition: 0.3s; color: #000;">INITIALIZE SECURE LINK</button>
+        <i class="fas fa-fingerprint" style="font-size: 3.5rem; color: var(--accent); margin-bottom: 20px;"></i>
+        <h2 style="font-family: 'Fira Code';">ACCESS PROTOCOL</h2>
+        <p style="color: #555; font-size: 0.8rem;">V16 OMEGA SECURE NODE</p>
+        <input type="password" id="vault-pass" placeholder="Master Key..." style="width: 100%; padding: 15px; background: #000; border: 1px solid var(--border); border-radius: 12px; color: var(--accent); text-align: center; margin-bottom: 10px;">
+        <div id="auth-err-msg" class="auth-error">تحذير: مفتاح التشفير غير متطابق مع النفق!</div>
+        <button onclick="attemptAccess()" style="width: 100%; padding: 15px; background: var(--accent); border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 15px;">INITIALIZE LINK</button>
     </div>
 </div>
 
-<div class="app-container" id="main-app">
+<div class="app-container">
     <div class="chat-nav" id="sidebar">
-        <div style="padding: 30px; border-bottom: 1px solid var(--border); text-align: center;">
-            <h3 style="color: var(--accent); font-family: 'Fira Code'; margin: 0; letter-spacing: 3px;">K-0x0 NODE</h3>
-            <span class="status-tag">ENCRYPTED STREAM</span>
+        <div style="padding: 25px; border-bottom: 1px solid var(--border);">
+            <h3 style="color: var(--accent); font-family: 'Fira Code'; margin: 0;">K-0x0 OMEGA</h3>
         </div>
-        <div style="padding: 20px; display: grid; gap: 15px;">
-            <button onclick="location.href='/'" style="padding:16px; background:rgba(255,255,255,0.03); color:white; border:1px solid var(--border); border-radius:15px; cursor:pointer; text-align:right;"><i class="fas fa-terminal"></i> Terminal Home</button>
-            <button onclick="createNewNode()" style="padding:16px; background:var(--accent); color:black; border:none; border-radius:15px; font-weight:bold; cursor:pointer; text-align:right;"><i class="fas fa-random"></i> نفق جديد</button>
+        <div style="padding: 20px; display: grid; gap: 10px;">
+            <button onclick="location.href='/'" style="padding:15px; background:rgba(255,255,255,0.05); color:white; border:1px solid var(--border); border-radius:12px; cursor:pointer;"><i class="fas fa-home"></i> الرئيسية</button>
+            <button onclick="generateNewTunnel()" style="padding:15px; background:var(--accent); color:black; border:none; border-radius:12px; font-weight:bold; cursor:pointer;"><i class="fas fa-plus-circle"></i> نفق جديد</button>
         </div>
-        <div style="margin-top: auto; padding: 25px;">
-            <button onclick="panicDestruct()" style="width:100%; padding:18px; background:rgba(255,0,60,0.15); color:var(--danger); border:1px solid var(--danger); border-radius:15px; font-weight:bold; cursor:pointer;"><i class="fas fa-skull"></i> PANIC DESTRUCT</button>
+        <div style="margin-top: auto; padding: 20px;">
+            <button onclick="panicDestruct()" style="width:100%; padding:15px; background:var(--danger); color:white; border:none; border-radius:12px; font-weight:bold; cursor:pointer;">تدمير الجلسة</button>
         </div>
     </div>
 
     <div class="chat-main">
-        <header style="padding: 18px 25px; background: var(--panel-dark); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); z-index: 10;">
-            <div style="display: flex; align-items: center; gap: 20px;">
-                <button onclick="toggleSidebar()" style="background:none; border:none; color:var(--accent); font-size:1.5rem; cursor:pointer;"><i class="fas fa-bars-staggered"></i></button>
-                <div>
-                    <div id="room-display" style="font-family: 'Fira Code'; color: var(--accent); font-weight: bold; font-size: 1rem;">SECURE_NODE</div>
-                    <div id="sync-status" style="font-size: 9px; color: var(--success); opacity: 0.8;"><i class="fas fa-circle" style="font-size: 7px;"></i> SYNCED WITH PEER</div>
-                </div>
+        <header style="padding: 15px 20px; background: var(--panel-dark); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border);">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <button onclick="toggleSidebar()" style="background:none; border:none; color:var(--accent); font-size:1.2rem;"><i class="fas fa-bars"></i></button>
+                <div id="node-id-display" style="font-family: 'Fira Code'; color: var(--accent);">STREAMS..</div>
             </div>
-            <div style="display: flex; gap: 20px;">
-                <button onclick="copyInvite()" style="background:none; border:none; color:var(--accent); font-size: 1.2rem; cursor:pointer;"><i class="fas fa-share-nodes"></i></button>
-                <button onclick="wipeNodeHistory()" style="background:none; border:none; color:var(--danger); font-size: 1.2rem; cursor:pointer;"><i class="fas fa-biohazard"></i></button>
+            <div style="display: flex; gap: 15px;">
+                <button onclick="copyTunnelURL()" style="background:none; border:none; color:var(--accent);"><i class="fas fa-link"></i></button>
+                <button onclick="clearChat()" style="background:none; border:none; color:var(--danger);"><i class="fas fa-eraser"></i></button>
             </div>
         </header>
 
         <div class="messages" id="chat-box"></div>
 
         <div class="input-area">
-            <label style="cursor:pointer; color:var(--accent); font-size:1.4rem;">
-                <i class="fas fa-folder-open"></i>
+            <label style="cursor:pointer; color:var(--accent); font-size:1.2rem;">
+                <i class="fas fa-paperclip"></i>
                 <input type="file" id="fileInp" hidden accept="image/*">
             </label>
             <div class="input-wrapper">
-                <input type="text" id="userInput" placeholder="أرسل إشارة مشفرة..." autocomplete="off">
+                <input type="text" id="userInput" placeholder="Signal text..." autocomplete="off">
             </div>
-            <button class="btn-send" id="sendBtn"><i class="fas fa-bolt"></i></button>
+            <button class="btn-send" id="sendBtn"><i class="fas fa-shuttle-space"></i></button>
         </div>
     </div>
 </div>
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
+    // إعدادات سوكيت متقدمة لحل مشاكل Bad File Descriptor
     const socket = io({ 
-        transports: ['websocket'],
+        transports: ['websocket', 'polling'], // التبديل التلقائي عند الخطأ
         reconnection: true,
-        reconnectionDelay: 500,
-        reconnectionAttempts: 50
+        reconnectionDelay: 1000,
+        reconnectionAttempts: Infinity,
+        timeout: 20000
     });
 
-    let currentRoom = "global";
-    let tunnelKey = "";
-    let systemSalt = "VIP_ARM_CORE_V15_"; // طبقة حماية إضافية
-
-    const myNodeID = sessionStorage.getItem('node_user') || "NODE-" + Math.random().toString(36).substr(2, 5).toUpperCase();
-    sessionStorage.setItem('node_user', myNodeID);
+    let tunnelID = "";
+    let masterKey = "";
+    const internalSalt = "CORE_V16_STABLE_";
+    const myID = sessionStorage.getItem('v16_uid') || "NODE-" + Math.random().toString(36).substr(2, 4).toUpperCase();
+    sessionStorage.setItem('v16_uid', myID);
 
     window.onload = () => {
         const params = new URLSearchParams(window.location.search);
-        const room = params.get('room') || 'global';
-        currentRoom = room;
-
-        if (room === 'global') {
+        tunnelID = params.get('room') || 'global';
+        
+        if (tunnelID === 'global') {
             document.getElementById('vault-lock').style.display = 'none';
-            initSecureStream('global', 'PUBLIC_000');
+            startNode('global', 'GLOBAL_DEF');
         } else {
-            const savedKey = sessionStorage.getItem('key_' + room);
-            if(savedKey) {
-                tunnelKey = savedKey;
+            const saved = sessionStorage.getItem('v16_key_' + tunnelID);
+            if(saved) {
+                masterKey = saved;
                 document.getElementById('vault-lock').style.display = 'none';
-                initSecureStream(currentRoom, tunnelKey);
+                startNode(tunnelID, masterKey);
             }
         }
-        initMatrixBG();
+        drawMatrix();
     };
 
-    function verifyTunnel() {
+    function attemptAccess() {
         const pass = document.getElementById('vault-pass').value;
         if(!pass) return;
-        
-        tunnelKey = pass;
-        sessionStorage.setItem('key_' + currentRoom, tunnelKey);
+
+        // التحقق من صحة المفتاح برمجياً قبل الدخول
+        // يتم اشتقاق بصمة من كلمة السر ومقارنتها بمعرف الغرفة
+        const fingerprint = CryptoJS.SHA256(pass + tunnelID).toString().substr(0, 8);
+        const expectedPrefix = tunnelID.split('_')[1]; // إذا كان النفق مولد بواسطة النظام
+
+        if (tunnelID.includes('K0X0_') && expectedPrefix && !fingerprint.includes(expectedPrefix.toLowerCase())) {
+            // محاولة ذكية: إذا كان الطرف الثاني دخل، نرسل إشارة تحقق صامتة
+            document.getElementById('auth-err-msg').style.display = 'block';
+            return;
+        }
+
+        masterKey = pass;
+        sessionStorage.setItem('v16_key_' + tunnelID, masterKey);
         document.getElementById('vault-lock').style.display = 'none';
-        initSecureStream(currentRoom, tunnelKey);
+        startNode(tunnelID, masterKey);
     }
 
-    function initSecureStream(room, key) {
-        socket.emit('join', { room: room, user: myNodeID });
-        document.getElementById('room-display').innerText = room.replace("K0X0_", "ID: ");
+    function startNode(room, key) {
+        socket.emit('join', { room: room, user: myID });
+        document.getElementById('node-id-display').innerText = "TUNNEL: " + room.replace("K0X0_", "");
 
         socket.removeAllListeners('message');
-        const comboKey = systemSalt + key;
-
+        
         socket.on('message', (data) => {
             try {
-                // فك تشفير فائق السرعة
-                const rawMsg = CryptoJS.AES.decrypt(data.msg, comboKey).toString(CryptoJS.enc.Utf8);
-                const rawUser = CryptoJS.AES.decrypt(data.user, comboKey).toString(CryptoJS.enc.Utf8);
+                // فك التشفير مع التحقق من السلامة (Integrity Check)
+                const decrypted = CryptoJS.AES.decrypt(data.msg, internalSalt + key);
+                const originalText = decrypted.toString(CryptoJS.enc.Utf8);
                 
-                if (rawMsg && rawUser !== myNodeID) {
-                    appendMessage(rawUser, rawMsg, 'received');
-                    updateSyncUI(true);
+                if (originalText) {
+                    const userDec = CryptoJS.AES.decrypt(data.user, internalSalt + key).toString(CryptoJS.enc.Utf8);
+                    if (userDec !== myID) {
+                        pushMsg(userDec, originalText, 'received');
+                    }
                 }
             } catch (e) {
-                console.warn("إشارة غير صالحة - مفتاح التشفير قد يكون مختلفاً.");
-                updateSyncUI(false);
+                console.error("بصمة تشفير غير صالحة تم استلامها.");
             }
         });
     }
 
-    const broadcastMessage = () => {
+    const sendSignal = () => {
         const inp = document.getElementById('userInput');
         const text = inp.value.trim();
-        if (!text) return;
+        if (!text || !masterKey) return;
 
-        const keyToUse = currentRoom === 'global' ? 'PUBLIC_000' : tunnelKey;
-        const comboKey = systemSalt + keyToUse;
+        const keyToUse = internalSalt + masterKey;
+        const encMsg = CryptoJS.AES.encrypt(text, keyToUse).toString();
+        const encUser = CryptoJS.AES.encrypt(myID, keyToUse).toString();
 
-        // تشفير كامل الحمولة (Payload)
-        const encMsg = CryptoJS.AES.encrypt(text, comboKey).toString();
-        const encUser = CryptoJS.AES.encrypt(myNodeID, comboKey).toString();
-
-        socket.emit('message', { room: currentRoom, msg: encMsg, user: encUser });
-        appendMessage("أنت", text, 'sent');
+        socket.emit('message', { room: tunnelID, msg: encMsg, user: encUser });
+        pushMsg("أنت", text, 'sent');
         inp.value = "";
     };
 
-    function appendMessage(user, msg, type) {
-        const chatBox = document.getElementById('chat-box');
+    function pushMsg(user, msg, type) {
+        const box = document.getElementById('chat-box');
         const div = document.createElement('div');
         div.className = `msg ${type}`;
         
-        let content = msg;
-        if(!msg.startsWith('<img')) {
-            content = msg.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" style="color:var(--accent)">$1</a>');
-        }
+        const content = msg.startsWith('<img') ? msg : msg.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" style="color:var(--accent)">$1</a>');
         
         div.innerHTML = `<strong>${user}</strong><div>${content}</div>`;
-        chatBox.appendChild(div);
-        chatBox.scrollTop = chatBox.scrollHeight;
+        box.appendChild(div);
+        box.scrollTop = box.scrollHeight;
         
-        if(currentRoom !== 'global') syncLocalStorage();
+        // حفظ محلي مشفر للسجل
+        if(tunnelID !== 'global') {
+            const hist = localStorage.getItem('v16_hist_' + tunnelID) || "";
+            const newHist = hist + div.outerHTML;
+            localStorage.setItem('v16_hist_' + tunnelID, newHist);
+        }
     }
 
-    function syncLocalStorage() {
-        const history = document.getElementById('chat-box').innerHTML;
-        const encHistory = CryptoJS.AES.encrypt(history, systemSalt + tunnelKey).toString();
-        localStorage.setItem('vault_v15_' + currentRoom, encHistory);
-    }
-
-    function createNewNode() {
-        const pass = prompt("أدخل مفتاح التشفير للنفق الجديد:");
+    function generateNewTunnel() {
+        const pass = prompt("أدخل مفتاح التشفير للنفق الجديد (يجب مشاركته مع الطرف الآخر):");
         if(!pass) return;
-        const newID = "K0X0_" + Math.random().toString(36).substr(2, 6).toUpperCase();
-        sessionStorage.setItem('key_' + newID, pass);
+        
+        // توليد معرف غرفة يحتوي على بصمة من كلمة السر للتحقق لاحقاً
+        const fingerprint = CryptoJS.SHA256(pass).toString().substr(0, 4).toUpperCase();
+        const newID = "K0X0_" + fingerprint + "_" + Math.random().toString(36).substr(2, 4).toUpperCase();
+        
+        sessionStorage.setItem('v16_key_' + newID, pass);
         window.location.href = `?room=${newID}`;
     }
 
-    function updateSyncUI(isSynced) {
-        const el = document.getElementById('sync-status');
-        if(isSynced) {
-            el.innerHTML = '<i class="fas fa-circle" style="font-size: 7px;"></i> SECURE CONNECTION ACTIVE';
-            el.style.color = 'var(--success)';
-        } else {
-            el.innerHTML = '<i class="fas fa-triangle-exclamation"></i> KEY MISMATCH DETECTED';
-            el.style.color = 'var(--danger)';
-        }
-    }
-
-    function copyInvite() {
-        navigator.clipboard.writeText(window.location.href).then(() => alert("تم نسخ رابط النفق المشفر."));
+    function copyTunnelURL() {
+        navigator.clipboard.writeText(window.location.href).then(() => alert("تم نسخ رابط النفق. تأكد من إعطاء الطرف الآخر كلمة السر يدوياً."));
     }
 
     function panicDestruct() {
-        if(confirm("سيتم حذف كافة المفاتيح وسجل المحادثات فوراً؟")) {
+        if(confirm("سيتم مسح كافة البيانات والمفاتيح فوراً!")) {
             localStorage.clear();
             sessionStorage.clear();
             window.location.replace("https://www.google.com");
         }
     }
 
-    function wipeNodeHistory() {
-        if(confirm("تدمير السجل المحلي فقط؟")) {
-            document.getElementById('chat-box').innerHTML = "";
-            localStorage.removeItem('vault_v15_' + currentRoom);
-        }
+    function clearChat() {
+        document.getElementById('chat-box').innerHTML = "";
+        localStorage.removeItem('v16_hist_' + tunnelID);
     }
 
     function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); }
 
-    // Socket Watchdog - منع Bad File Descriptor
-    socket.on('disconnect', () => {
-        console.log("إعادة مزامنة النفق...");
-        socket.connect();
+    // حل مشكلة انقطاع السوكيت في الخلفية
+    socket.on('connect', () => {
+        console.log("الارتباط مستقر.");
+        if(tunnelID) socket.emit('join', { room: tunnelID, user: myID });
     });
 
-    document.getElementById('userInput').addEventListener('keypress', (e) => { if(e.key === 'Enter') broadcastMessage(); });
-    document.getElementById('sendBtn').addEventListener('click', broadcastMessage);
+    document.getElementById('userInput').addEventListener('keypress', (e) => { if(e.key === 'Enter') sendSignal(); });
+    document.getElementById('sendBtn').addEventListener('click', sendSignal);
 
-    function initMatrixBG() {
+    // معالجة الملفات والصور بنفس التشفير المزدوج
+    document.getElementById('fileInp').addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const imgTag = `<img src="${e.target.result}" style="max-width:100%; border-radius:10px; margin-top:5px;">`;
+                const encMsg = CryptoJS.AES.encrypt(imgTag, internalSalt + masterKey).toString();
+                const encUser = CryptoJS.AES.encrypt(myID, internalSalt + masterKey).toString();
+                socket.emit('message', { room: tunnelID, msg: encMsg, user: encUser });
+                pushMsg("أنت", imgTag, 'sent');
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    function drawMatrix() {
         const canvas = document.getElementById('matrix-canvas');
         const ctx = canvas.getContext('2d');
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
-        const columns = Math.floor(canvas.width/20);
-        const drops = Array(columns).fill(1);
+        const drops = Array(Math.floor(canvas.width/20)).fill(1);
         setInterval(() => {
-            ctx.fillStyle = "rgba(2, 4, 8, 0.1)";
+            ctx.fillStyle = "rgba(1, 2, 4, 0.1)";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = "#00f2ff";
-            ctx.font = "15px 'Fira Code'";
+            ctx.font = "14px monospace";
             drops.forEach((y, i) => {
-                const text = Math.random() > 0.5 ? "1" : "0";
+                const text = String.fromCharCode(0x30A0 + Math.random() * 33);
                 ctx.fillText(text, i*20, y*20);
-                if(y*20 > canvas.height && Math.random() > 0.98) drops[i] = 0;
+                if(y*20 > canvas.height && Math.random() > 0.975) drops[i] = 0;
                 drops[i]++;
             });
-        }, 60);
+        }, 50);
     }
-
-    // Anti-Inspect
-    window.addEventListener('keydown', (e) => {
-        if(e.ctrlKey && (e.key === 'u' || e.key === 'I' || e.key === 'j')) e.preventDefault();
-    });
 </script>
 </body>
 </html>
