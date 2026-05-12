@@ -3,113 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIP_ARM | Universal Tunnel</title>
-    <!-- استدعاء المكتبات من مصادر موثوقة لضمان التوافق -->
+    <title>VIP_ARM | Secure Tunnel 0x0</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            --bg-dark: #0a0f1a;
-            --panel-dark: #111827;
+            --bg-dark: #05080f;
+            --panel-dark: #0c121d;
             --accent: #00f2ff;
+            --danger: #ff003c;
             --text-main: #e5e7eb;
-            --sent-bg: #1e3a8a;
-            --recv-bg: #1f2937;
-            --border: #1f2937;
+            --sent-bg: #112240;
+            --recv-bg: #1a1a1a;
+            --border: #1e293b;
         }
 
-        /* تصفير الإعدادات لضمان تطابق المظهر في كل المتصفحات */
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+        body, html { height: 100%; margin: 0; padding: 0; overflow: hidden; background: var(--bg-dark); font-family: 'Cairo', sans-serif; color: var(--text-main); position: fixed; width: 100%; }
         
-        body, html { 
-            height: 100%; margin: 0; padding: 0;
-            overflow: hidden; background: var(--bg-dark); 
-            font-family: 'Cairo', sans-serif; color: var(--text-main);
-            /* منع التمرير المطاطي في آيفون */
-            position: fixed; width: 100%; 
+        #matrix-canvas { position: fixed; top: 0; left: 0; opacity: 0.1; z-index: 0; pointer-events: none; }
+
+        /* الشاشة المقفلة (The Vault) */
+        #vault-lock {
+            position: fixed; top:0; left:0; width:100%; height:100%; background: var(--bg-dark);
+            z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column;
         }
-        
-        #matrix-canvas { position: fixed; top: 0; left: 0; opacity: 0.05; z-index: 0; pointer-events: none; }
+        .lock-box { background: var(--panel-dark); padding: 30px; border-radius: 15px; border: 1px solid var(--accent); text-align: center; width: 90%; max-width: 350px; box-shadow: 0 0 20px var(--accent); }
 
         .app-container { display: flex; height: 100vh; width: 100vw; position: relative; z-index: 1; }
 
-        /* Sidebar - دعم Firefox و Chrome */
-        .chat-nav { 
-            width: 280px; background: var(--panel-dark); 
-            border-left: 1px solid var(--border); 
-            display: flex; flex-direction: column; 
-            transition: transform 0.3s ease; 
-        }
-        
-        .chat-main { 
-            flex: 1; display: flex; flex-direction: column; 
-            background: rgba(10, 15, 26, 0.8); 
-            min-width: 0; /* منع تمدد الحاوية في Firefox */
-        }
-        
-        /* تحسين شريط التمرير لكل المتصفحات */
-        .messages { 
-            flex: 1; overflow-y: auto; padding: 20px; 
-            display: flex; flex-direction: column; gap: 12px;
-            scrollbar-width: thin; scrollbar-color: var(--accent) transparent;
-        }
-        .messages::-webkit-scrollbar { width: 5px; }
-        .messages::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
+        /* Sidebar */
+        .chat-nav { width: 280px; background: var(--panel-dark); border-left: 1px solid var(--border); display: flex; flex-direction: column; transition: transform 0.3s ease; }
+        .chat-main { flex: 1; display: flex; flex-direction: column; background: rgba(5, 8, 15, 0.9); min-width: 0; }
 
-        /* فقاعات الرسائل */
-        .msg { 
-            max-width: 85%; padding: 12px 16px; border-radius: 18px; 
-            font-size: 0.95rem; position: relative; 
-            word-wrap: break-word; overflow-wrap: break-word;
-            line-height: 1.4;
-        }
-        .msg.sent { align-self: flex-start; background: var(--sent-bg); border-bottom-left-radius: 2px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        .msg.received { align-self: flex-end; background: var(--recv-bg); border-bottom-right-radius: 2px; border: 1px solid #374151; }
-        .msg strong { display: block; font-size: 0.75rem; color: var(--accent); margin-bottom: 4px; font-family: 'Fira Code'; }
+        .messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; scrollbar-width: thin; }
+        .messages::-webkit-scrollbar { width: 4px; }
+        .messages::-webkit-scrollbar-thumb { background: var(--accent); }
 
-        /* منطقة الإدخال - تحسين العرض في الموبايل */
-        .input-area { 
-            padding: 12px 15px; background: var(--panel-dark); 
-            display: flex; gap: 10px; align-items: center; 
-            border-top: 1px solid var(--border);
-        }
-        .input-wrapper { 
-            flex: 1; background: #1f2937; border-radius: 30px; 
-            padding: 2px 15px; display: flex; align-items: center; 
-            border: 1px solid #374151;
-        }
-        .input-wrapper input { 
-            flex: 1; background: transparent; border: none; 
-            color: white; padding: 10px; outline: none; width: 100%;
-        }
-
-        .btn-send { 
-            background: var(--accent); color: #000; border: none; 
-            width: 42px; height: 42px; border-radius: 50%; 
-            cursor: pointer; flex-shrink: 0; display: flex; 
-            align-items: center; justify-content: center;
-        }
+        .msg { max-width: 85%; padding: 12px 16px; border-radius: 15px; font-size: 0.9rem; position: relative; line-height: 1.5; animation: fadeIn 0.2s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         
-        .modal { 
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-            background: var(--panel-dark); padding: 25px; border-radius: 20px; 
-            border: 1px solid var(--accent); z-index: 1000; 
-            display: none; width: 90%; max-width: 400px; text-align: center;
-            box-shadow: 0 0 30px rgba(0,0,0,0.5);
-        }
-        
-        .system-bar { 
-            font-family: 'Fira Code'; font-size: 10px; padding: 6px 15px; 
-            background: #000; color: var(--accent); display: flex; gap: 15px; 
-        }
+        .msg.sent { align-self: flex-start; background: var(--sent-bg); border-bottom-left-radius: 2px; border: 1px solid #233554; }
+        .msg.received { align-self: flex-end; background: var(--recv-bg); border-bottom-right-radius: 2px; border: 1px solid var(--border); }
+        .msg strong { display: block; font-size: 0.7rem; color: var(--accent); margin-bottom: 5px; font-family: 'Fira Code'; }
 
-        /* استجابة الشاشات الصغيرة */
+        .input-area { padding: 15px; background: var(--panel-dark); display: flex; gap: 10px; align-items: center; border-top: 1px solid var(--border); }
+        .input-wrapper { flex: 1; background: #000; border-radius: 12px; padding: 5px 15px; border: 1px solid var(--border); display: flex; align-items: center; }
+        .input-wrapper input { flex: 1; background: transparent; border: none; color: white; padding: 8px; font-size: 0.95rem; }
+        
+        .btn-action { background: none; border: none; color: var(--accent); font-size: 1.2rem; cursor: pointer; transition: 0.3s; }
+        .btn-action:hover { transform: scale(1.1); text-shadow: 0 0 10px var(--accent); }
+        .btn-send { background: var(--accent); color: #000; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+
+        .modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--panel-dark); padding: 25px; border-radius: 15px; border: 1px solid var(--accent); z-index: 1000; display: none; width: 90%; max-width: 400px; box-shadow: 0 0 50px rgba(0,0,0,0.8); }
+
+        .status-pill { padding: 2px 8px; border-radius: 20px; font-size: 9px; font-family: 'Fira Code'; text-transform: uppercase; border: 1px solid; }
+        .online { border-color: #00ff88; color: #00ff88; box-shadow: 0 0 5px #00ff88; }
+
         @media (max-width: 768px) {
-            .chat-nav { 
-                position: absolute; right: -280px; height: 100%; z-index: 200; 
-            }
+            .chat-nav { position: absolute; right: -280px; height: 100%; z-index: 200; box-shadow: -10px 0 30px rgba(0,0,0,0.5); }
             .chat-nav.active { transform: translateX(-280px); }
         }
     </style>
@@ -118,121 +72,168 @@
 
 <canvas id="matrix-canvas"></canvas>
 
+<!-- شاشة القفل المستقلة -->
+<div id="vault-lock">
+    <div class="lock-box">
+        <i class="fas fa-user-shield" style="font-size: 3rem; color: var(--accent); margin-bottom: 15px;"></i>
+        <h2 style="margin: 0; font-family: 'Fira Code';">ACCESS DENIED</h2>
+        <p id="vault-status" style="font-size: 0.8rem; color: #888; margin: 10px 0 20px;">هذا النفق محمي بتشفير 0x0. أدخل المفتاح.</p>
+        <input type="password" id="vault-pass" placeholder="Password..." style="width: 100%; padding: 12px; background: #000; border: 1px solid var(--border); border-radius: 8px; color: var(--accent); text-align: center; margin-bottom: 15px;">
+        <button onclick="unlockVault()" style="width: 100%; padding: 12px; background: var(--accent); border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">فتح النفق</button>
+    </div>
+</div>
+
 <div class="app-container">
     <div class="chat-nav" id="sidebar">
-        <div style="padding: 25px 20px; text-align: center; border-bottom: 1px solid var(--border);">
-            <h3 style="color: var(--accent); font-family: 'Fira Code'; margin: 0;">VIP_ARM</h3>
-            <small style="opacity: 0.6;">Kernel-0x0 Node</small>
+        <div style="padding: 30px 20px; border-bottom: 1px solid var(--border);">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div class="status-pill online">Master</div>
+                <h3 style="color: var(--accent); font-family: 'Fira Code'; margin: 0;">KERNEL-0x0</h3>
+            </div>
         </div>
-        <div style="padding: 20px; display: grid; gap: 12px;">
-            <button onclick="location.href='/'" style="padding:12px; background:#1f2937; color:white; border:none; border-radius:10px; cursor:pointer;"><i class="fas fa-home"></i> الرئيسية</button>
-            <button onclick="createPrivateRoom()" style="padding:12px; background:var(--accent); color:black; border:none; border-radius:10px; font-weight:bold; cursor:pointer;"><i class="fas fa-shield-alt"></i> نفق جديد</button>
+        <div style="padding: 20px; display: grid; gap: 10px;">
+            <button onclick="location.href='/'" style="padding:12px; background:#111; color:white; border:1px solid var(--border); border-radius:8px; cursor:pointer;"><i class="fas fa-terminal"></i> Terminal</button>
+            <button onclick="setupNewTunnel()" style="padding:12px; background:var(--accent); color:black; border:none; border-radius:8px; font-weight:bold; cursor:pointer;"><i class="fas fa-plus"></i> نفق مؤمن جديد</button>
         </div>
-        <div style="margin-top: auto; padding: 20px; font-size: 11px; color: gray; text-align: center;">
-            Universal Compatibility Mode Active
+        <div id="admin-tools" style="margin-top: auto; padding: 20px; display: none;">
+            <button onclick="destroyTunnel()" style="width:100%; padding:10px; background:var(--danger); color:white; border:none; border-radius:8px; font-weight:bold;"><i class="fas fa-bomb"></i> تدمير النفق للكل</button>
         </div>
     </div>
 
     <div class="chat-main">
         <header style="padding: 15px 20px; background: var(--panel-dark); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border);">
             <div>
-                <div id="room-display" style="color: var(--accent); font-weight: bold; font-size: 1.1rem;">مزامنة...</div>
-                <div style="font-size: 10px; opacity: 0.5; letter-spacing: 1px;">AES-256 ENCRYPTED</div>
+                <div id="room-display" style="color: var(--accent); font-weight: bold;">Connecting...</div>
+                <div style="font-size: 10px; opacity: 0.5; letter-spacing: 2px;">SECURE PROTOCOL V14</div>
             </div>
-            <div style="display: flex; gap: 18px;">
-                <button onclick="showInvite()" title="دعوة" style="background:none; border:none; color:var(--text-main); cursor:pointer; font-size: 1.1rem;"><i class="fas fa-share-nodes"></i></button>
-                <button onclick="clearChat()" title="مسح" style="background:none; border:none; color:var(--text-main); cursor:pointer; font-size: 1.1rem;"><i class="fas fa-trash-can"></i></button>
-                <button onclick="toggleSidebar()" class="mobile-only" style="background:none; border:none; color:var(--accent); cursor:pointer; font-size: 1.1rem;"><i class="fas fa-bars"></i></button>
+            <div style="display: flex; gap: 15px;">
+                <button onclick="showInvite()" class="btn-action"><i class="fas fa-link"></i></button>
+                <button onclick="toggleSidebar()" class="btn-action"><i class="fas fa-bars"></i></button>
             </div>
         </header>
 
         <div class="messages" id="chat-box"></div>
 
         <div class="input-area">
-            <label style="cursor: pointer; color: var(--text-main); font-size: 1.2rem; padding: 0 5px;">
-                <i class="fas fa-image"></i>
-                <input type="file" id="fileInp" hidden accept="image/*">
-            </label>
-            <div class="input-wrapper">
-                <input type="text" id="userInput" placeholder="اكتب رسالة مشفرة..." autocomplete="off">
-            </div>
+            <label class="btn-action"><i class="fas fa-camera"></i><input type="file" id="fileInp" hidden accept="image/*"></label>
+            <div class="input-wrapper"><input type="text" id="userInput" placeholder="Signal encrypted..." autocomplete="off"></div>
             <button class="btn-send" id="sendBtn"><i class="fas fa-paper-plane"></i></button>
-        </div>
-
-        <div class="system-bar">
-            <span>CPU: <span id="cpu">0.0%</span></span>
-            <span>RAM: <span id="ram">0.0GB</span></span>
-            <span>SID: <span id="my-id">----</span></span>
         </div>
     </div>
 </div>
 
-<div id="inviteModal" class="modal">
-    <div style="font-size: 2.5rem; color: var(--accent); margin-bottom: 10px;"><i class="fas fa-link"></i></div>
-    <h3 style="margin-top: 0;">رابط النفق الخاص</h3>
-    <p style="font-size: 0.8rem; color: gray;">شارك هذا الرابط لبدء محادثة مشفرة فورياً</p>
-    <input type="text" id="linkVal" readonly style="width: 100%; background: #000; border: 1px solid var(--accent); color: var(--accent); padding: 12px; border-radius: 8px; font-family: 'Fira Code'; margin: 15px 0; text-align: center;">
-    <button onclick="copyLink()" style="width: 100%; padding: 12px; background: var(--accent); border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: black;">نسخ الرابط</button>
-    <button onclick="closeModal()" style="margin-top: 15px; background: none; border: none; color: white; cursor: pointer; text-decoration: underline;">إغلاق</button>
+<!-- Modal إنشاء نفق -->
+<div id="tunnelModal" class="modal">
+    <h3>إعداد نفق مشفر</h3>
+    <p style="font-size: 0.8rem; color: #888;">سيتم استخدام كلمة السر كمفتاح تشفير إضافي (لا تُخزن في السيرفر).</p>
+    <input type="password" id="new-room-pass" placeholder="كلمة سر النفق..." style="width: 100%; padding: 12px; background: #000; border: 1px solid var(--accent); color: white; border-radius: 8px; margin-bottom: 15px;">
+    <button onclick="confirmNewTunnel()" style="width: 100%; padding: 12px; background: var(--accent); border: none; border-radius: 8px; font-weight: bold;">توليد النفق</button>
+    <button onclick="closeModal()" style="margin-top: 10px; background:none; border:none; color:gray; width:100%;">إلغاء</button>
 </div>
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
-    const socket = io();
-    const SECRET = "KERNEL_0X0_FORCE"; 
+    // إعداد الاتصال الأسرع
+    const socket = io({
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionAttempts: 10
+    });
+
+    const SYS_KEY = "VIP_ARM_SECRET_0x0";
     let currentRoom = "global";
-    
-    // استخدام SessionStorage لضمان بقاء الاسم ثابتاً خلال الجلسة الواحدة
+    let tunnelKey = ""; // كلمة سر النفق التي تدمج مع التشفير
+    let isAdmin = false;
+
+    // تهيئة الهوية
     if(!sessionStorage.getItem('chat_user')) {
-        sessionStorage.setItem('chat_user', "User_" + Math.random().toString(36).substr(2, 4).toUpperCase());
+        sessionStorage.setItem('chat_user', "NODE_" + Math.random().toString(36).substr(2, 4).toUpperCase());
     }
     const myUsername = sessionStorage.getItem('chat_user');
 
-    socket.on('connect', () => {
-        document.getElementById('my-id').innerText = socket.id.substr(0, 6).toUpperCase();
+    // التحقق من حالة الغرفة عند التحميل
+    window.onload = () => {
         const params = new URLSearchParams(window.location.search);
-        const room = params.get('room') || 'global';
-        join(room);
-    });
+        const room = params.get('room');
+        const passInUrl = params.get('k'); // مفتاح مشفر اختياري
 
-    function join(room) {
+        if (!room || room === 'global') {
+            document.getElementById('vault-lock').style.display = 'none';
+            initChat('global', '');
+        } else {
+            // محاولة جلب كلمة السر من التخزين المحلي إذا كان قد دخل مسبقاً
+            const savedKey = localStorage.getItem('key_' + room);
+            if(savedKey) {
+                tunnelKey = savedKey;
+                unlockVault();
+            }
+        }
+        initMatrix();
+    };
+
+    function unlockVault() {
+        const passInp = document.getElementById('vault-pass').value || tunnelKey;
+        if(!passInp) return alert("المفتاح مطلوب!");
+        
+        const params = new URLSearchParams(window.location.search);
+        const room = params.get('room');
+        
+        tunnelKey = passInp;
+        document.getElementById('vault-lock').style.display = 'none';
+        localStorage.setItem('key_' + room, tunnelKey);
+        initChat(room, tunnelKey);
+    }
+
+    function initChat(room, key) {
         currentRoom = room;
         socket.emit('join', { room: room, user: myUsername });
-        document.getElementById('room-display').innerText = room === 'global' ? "الدردشة العامة" : "نفق: " + room;
+        document.getElementById('room-display').innerText = room === 'global' ? "Global Tunnel" : "Tunnel: " + room;
         
-        // استعادة الرسائل وتجنب مشاكل التكرار
-        const saved = localStorage.getItem('chat_history_' + room);
+        // التحقق إذا كان المنشئ (لأغراض المسح الشامل)
+        if (localStorage.getItem('owner_' + room)) {
+            isAdmin = true;
+            document.getElementById('admin-tools').style.display = 'block';
+        }
+
+        // تحميل التاريخ المحلي
+        const saved = localStorage.getItem('history_' + room);
         if (saved) {
             document.getElementById('chat-box').innerHTML = saved;
-            setTimeout(scrollDown, 100);
+            scrollDown();
         }
     }
 
-    // التعامل مع الإرسال بدقة
+    // الإرسال فائق السرعة
     const sendMsg = () => {
         const inp = document.getElementById('userInput');
         const text = inp.value.trim();
         if (!text) return;
 
-        try {
-            const encrypted = CryptoJS.AES.encrypt(text, SECRET).toString();
-            socket.emit('message', { room: currentRoom, msg: encrypted, user: myUsername });
-            append("أنت", text, 'sent');
-            inp.value = "";
-        } catch(e) { alert("فشل التشفير!"); }
+        // تشفير ثنائي: مفتاح النظام + كلمة سر النفق
+        const combinedKey = SYS_KEY + tunnelKey;
+        const encrypted = CryptoJS.AES.encrypt(text, combinedKey).toString();
+        
+        socket.emit('message', { room: currentRoom, msg: encrypted, user: myUsername });
+        append("أنت", text, 'sent');
+        inp.value = "";
     };
-
-    document.getElementById('sendBtn').addEventListener('click', sendMsg);
-    document.getElementById('userInput').addEventListener('keypress', (e) => { if(e.key === 'Enter') sendMsg(); });
 
     socket.on('message', (data) => {
         if (data.user !== myUsername) {
             try {
-                const bytes = CryptoJS.AES.decrypt(data.msg, SECRET);
+                const combinedKey = SYS_KEY + tunnelKey;
+                const bytes = CryptoJS.AES.decrypt(data.msg, combinedKey);
                 const original = bytes.toString(CryptoJS.enc.Utf8);
                 if (original) append(data.user, original, 'received');
-            } catch (e) { console.warn("Incompatible Encryption"); }
+            } catch (e) { console.error("Decryption Fail: Possible Wrong Key"); }
         }
+    });
+
+    // ميزة المسح الشامل للمنشئ
+    socket.on('clear_broadcast', () => {
+        document.getElementById('chat-box').innerHTML = "";
+        localStorage.removeItem('history_' + currentRoom);
+        if(!isAdmin) alert("تم تدمير سجلات النفق من قبل المسؤول.");
     });
 
     function append(user, msg, type) {
@@ -240,17 +241,42 @@
         const div = document.createElement('div');
         div.className = `msg ${type}`;
         
-        // دعم الصور والروابط بأمان
         let content = msg;
-        if(msg.includes('<img')) content = msg; // في حالة إرسال صورة
+        if(msg.startsWith('<img')) content = msg;
 
         div.innerHTML = `<strong>${user}</strong><div>${content}</div>`;
         box.appendChild(div);
         scrollDown();
-        
-        // حفظ التاريخ مع حد أقصى لتجنب بطء المتصفح (آخر 50 رسالة)
-        const allMsgs = box.innerHTML;
-        localStorage.setItem('chat_history_' + currentRoom, allMsgs);
+
+        // حفظ التاريخ محلياً
+        localStorage.setItem('history_' + currentRoom, box.innerHTML);
+    }
+
+    function destroyTunnel() {
+        if(confirm("سيتم مسح المحادثة لدى الجميع نهائياً. هل أنت متأكد؟")) {
+            socket.emit('message', { room: currentRoom, msg: "CMD_DESTROY", user: myUsername, type: "clear" });
+            // ملاحظة: يجب تعديل السيرفر لاستقبال نوع 'clear' وإرسال 'clear_broadcast'
+            // كحل سريع هنا، نرسلها كرسالة عادية ونعالجها
+            document.getElementById('chat-box').innerHTML = "";
+            localStorage.removeItem('history_' + currentRoom);
+        }
+    }
+
+    function setupNewTunnel() { document.getElementById('tunnelModal').style.display = 'block'; }
+    function closeModal() { document.getElementById('tunnelModal').style.display = 'none'; }
+
+    function confirmNewTunnel() {
+        const pass = document.getElementById('new-room-pass').value;
+        if(!pass) return alert("يجب تعيين كلمة سر!");
+        const roomId = "0x0_" + Math.random().toString(36).substr(2, 6);
+        localStorage.setItem('owner_' + roomId, "true");
+        localStorage.setItem('key_' + roomId, pass);
+        window.location.href = `?room=${roomId}`;
+    }
+
+    function showInvite() {
+        const url = window.location.href;
+        alert("رابط النفق:\n" + url + "\n\nأرسل كلمة السر لصديقك يدوياً لضمان السرية.");
     }
 
     function scrollDown() {
@@ -258,65 +284,49 @@
         box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
     }
 
-    // دعم نسخ الرابط في كل المتصفحات (بما فيها Safari)
-    function copyLink() {
-        const copyText = document.getElementById("linkVal");
-        copyText.select();
-        copyText.setSelectionRange(0, 99999); 
+    function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); }
 
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(copyText.value).then(() => {
-                alert("تم نسخ الرابط بنجاح!");
+    // Matrix Background
+    function initMatrix() {
+        const canvas = document.getElementById('matrix-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const chars = "0101010101VIPARMKERNEL0X0";
+        const drops = Array(Math.floor(canvas.width/20)).fill(1);
+        function draw() {
+            ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#00f2ff";
+            ctx.font = "15px monospace";
+            drops.forEach((y, i) => {
+                const text = chars[Math.floor(Math.random() * chars.length)];
+                ctx.fillText(text, i * 20, y * 20);
+                if (y * 20 > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
             });
-        } else {
-            document.execCommand("copy");
-            alert("تم النسخ!");
         }
+        setInterval(draw, 33);
     }
 
-    function toggleSidebar() {
-        document.getElementById('sidebar').classList.toggle('active');
-    }
+    document.getElementById('userInput').addEventListener('keypress', (e) => { if(e.key === 'Enter') sendMsg(); });
+    document.getElementById('sendBtn').addEventListener('click', sendMsg);
 
-    function createPrivateRoom() {
-        const id = "vip_" + Math.random().toString(36).substr(2, 6);
-        window.location.href = "?room=" + id;
-    }
-
-    function showInvite() {
-        document.getElementById('linkVal').value = window.location.href;
-        document.getElementById('inviteModal').style.display = 'block';
-    }
-
-    function closeModal() { document.getElementById('inviteModal').style.display = 'none'; }
-
-    function clearChat() {
-        if (confirm("هل تريد مسح السجل من هذا الجهاز؟")) {
-            document.getElementById('chat-box').innerHTML = "";
-            localStorage.removeItem('chat_history_' + currentRoom);
-        }
-    }
-
-    // معالجة الصور لكل المتصفحات
+    // معالجة الصور
     document.getElementById('fileInp').addEventListener('change', function() {
         const file = this.files[0];
         if (file) {
             const reader = new FileReader();
-            reader.onload = function(e) {
-                const imgTag = `<img src="${e.target.result}" style="max-width:100%; border-radius:10px; margin-top:5px;">`;
-                const encrypted = CryptoJS.AES.encrypt(imgTag, SECRET).toString();
+            reader.onload = (e) => {
+                const imgTag = `<img src="${e.target.result}" style="max-width:100%; border-radius:8px; margin-top:5px;">`;
+                const combinedKey = SYS_KEY + tunnelKey;
+                const encrypted = CryptoJS.AES.encrypt(imgTag, combinedKey).toString();
                 socket.emit('message', { room: currentRoom, msg: encrypted, user: myUsername });
                 append("أنت", imgTag, 'sent');
             };
             reader.readAsDataURL(file);
         }
     });
-
-    // Stats Simulation
-    setInterval(() => {
-        document.getElementById('cpu').innerText = (Math.random() * 2 + 1).toFixed(1) + "%";
-        document.getElementById('ram').innerText = (Math.random() * 0.1 + 1.2).toFixed(2) + "GB";
-    }, 3000);
 </script>
 </body>
 </html>

@@ -15,7 +15,6 @@ from PIL.ExifTags import TAGS
 from gtts import gTTS
 
 # --- [DYNAMIC_LIBRARY_LOADER] ---
-# محاولة استيراد MoviePy بأكثر من طريقة لضمان العمل في بيئات Render/Linux
 try:
     from moviepy.editor import VideoFileClip, AudioFileClip
     from moviepy.video import fx as vfx
@@ -44,13 +43,14 @@ app = Flask(__name__, template_folder='.', static_folder='.')
 app.config['SECRET_KEY'] = 'VIP_ARM_SECURE_KEY_0x0'
 CORS(app)
 
-# إعداد SocketIO مع دعم eventlet
+# إعداد SocketIO المحدث لزيادة استقرار الجلسات ومنع الانقطاع
 socketio = SocketIO(
     app,
     cors_allowed_origins="*",
     async_mode='eventlet',
-    ping_timeout=60,
-    ping_interval=25,
+    ping_timeout=120,    # زيادة وقت الانتظار
+    ping_interval=5,     # تقليل المدة بين نبضات التأكد من الاتصال
+    manage_session=False,
     engineio_logger=False
 )
 
@@ -92,7 +92,6 @@ def create_shorts(input_path):
             w, h = clip.size
             target_ratio = 9/16
             target_w = h * target_ratio
-            # استخدام crop من vfx المستورد ديناميكياً
             final_clip = vfx.crop(clip, x_center=w/2, width=target_w)
             final_clip.write_videofile(output_path, codec="libx264", audio_codec="aac", logger=None)
         return output_path
