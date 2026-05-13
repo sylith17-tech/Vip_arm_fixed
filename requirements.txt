@@ -12,5 +12,5 @@ requests==2.33.1
 proglog==0.1.10
 imageio==2.25.1
 imageio-ffmpeg==0.4.8
-gevent-websocket
+gevent-websocket==0.10.1
 gevent
