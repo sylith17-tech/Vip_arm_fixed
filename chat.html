@@ -11,125 +11,121 @@
     <style>
         :root {
             --bg-dark: #010409;
-            --panel-dark: rgba(13, 17, 23, 0.95);
+            --panel-dark: rgba(13, 17, 23, 0.98);
             --accent: #00f2ff;
             --danger: #ff003c;
             --success: #00ff88;
             --text-main: #e6edf3;
-            --sent-bg: rgba(0, 242, 255, 0.1);
-            --recv-bg: rgba(255, 255, 255, 0.05);
-            --border: rgba(48, 54, 61, 0.8);
-            --sidebar-w: 320px;
-            --glass: blur(25px) saturate(180%);
+            --sent-bg: rgba(0, 242, 255, 0.08);
+            --recv-bg: rgba(255, 255, 255, 0.03);
+            --border: rgba(48, 54, 61, 0.7);
+            --sidebar-w: 300px;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; scrollbar-width: thin; scrollbar-color: var(--accent) transparent; }
-        body, html { height: 100dvh; margin: 0; padding: 0; overflow: hidden; background: var(--bg-dark); font-family: 'Cairo', sans-serif; color: var(--text-main); position: fixed; width: 100%; transition: background 0.5s ease; background-size: cover; background-position: center; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body, html { height: 100%; margin: 0; padding: 0; overflow: hidden; background: var(--bg-dark); font-family: 'Cairo', sans-serif; color: var(--text-main); }
 
-        #matrix-canvas { position: fixed; top: 0; left: 0; opacity: 0.15; z-index: 0; pointer-events: none; }
+        #matrix-canvas { position: fixed; top: 0; left: 0; opacity: 0.1; z-index: -1; pointer-events: none; }
 
-        /* Secure Overlay */
-        #vault-lock { position: fixed; top:0; left:0; width:100%; height:100dvh; background: var(--bg-dark); z-index: 9999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(40px); transition: 0.5s; }
-        .lock-box { background: var(--panel-dark); padding: 40px; border-radius: 30px; border: 1px solid var(--accent); text-align: center; width: 90%; max-width: 400px; box-shadow: 0 0 50px rgba(0, 242, 255, 0.2); animation: scaleUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        @keyframes scaleUp { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        /* Lock Screen */
+        #vault-lock { position: fixed; inset: 0; background: var(--bg-dark); z-index: 10000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(20px); transition: 0.3s; }
+        .lock-box { background: var(--panel-dark); padding: 30px; border-radius: 20px; border: 1px solid var(--accent); text-align: center; width: 90%; max-width: 350px; box-shadow: 0 0 30px rgba(0, 242, 255, 0.1); }
 
-        .app-container { display: flex; height: 100dvh; width: 100vw; position: relative; z-index: 1; }
+        .app-container { display: flex; height: 100vh; width: 100vw; position: relative; }
         
-        /* Sidebar Enhanced */
-        .chat-nav { width: var(--sidebar-w); background: var(--panel-dark); border-left: 1px solid var(--border); display: flex; flex-direction: column; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1000; backdrop-filter: var(--glass); }
-        .tunnel-list { flex: 1; overflow-y: auto; padding: 15px; }
-        .tunnel-item { padding: 15px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 15px; margin-bottom: 10px; cursor: pointer; transition: 0.3s; position: relative; }
-        .tunnel-item:hover { border-color: var(--accent); background: rgba(0, 242, 255, 0.08); transform: translateX(-5px); }
-        .tunnel-item.active { border-right: 5px solid var(--accent); background: rgba(0, 242, 255, 0.12); }
+        /* Sidebar */
+        .chat-nav { 
+            width: var(--sidebar-w); 
+            background: var(--panel-dark); 
+            border-left: 1px solid var(--border); 
+            display: flex; 
+            flex-direction: column; 
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            z-index: 5000; 
+        }
         
-        /* Themes Section */
-        .theme-section { padding: 20px; border-top: 1px solid var(--border); background: rgba(0,0,0,0.3); }
-        .theme-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 15px; }
-        .theme-dot { width: 32px; height: 32px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.1); cursor: pointer; transition: 0.2s; }
-        .theme-dot:hover { transform: scale(1.15); border-color: var(--accent); }
+        .tunnel-list { flex: 1; overflow-y: auto; padding: 10px; }
+        .tunnel-item { padding: 12px; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 8px; cursor: pointer; transition: 0.2s; }
+        .tunnel-item:hover, .tunnel-item.active { border-color: var(--accent); background: rgba(0, 242, 255, 0.05); }
 
-        .chat-main { flex: 1; display: flex; flex-direction: column; min-width: 0; background: transparent; }
+        .chat-main { flex: 1; display: flex; flex-direction: column; min-width: 0; position: relative; }
 
-        /* Messages */
-        .messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; scroll-behavior: smooth; }
-        .msg { max-width: 80%; padding: 12px 18px; border-radius: 18px; font-size: 0.92rem; border: 1px solid var(--border); position: relative; animation: slideIn 0.3s ease-out; line-height: 1.5; word-wrap: break-word; }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* Header */
+        header { padding: 10px 15px; background: rgba(1, 4, 9, 0.8); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); backdrop-filter: blur(10px); z-index: 100; }
+
+        /* Messages area */
+        .messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; scroll-behavior: smooth; }
+        .msg { max-width: 85%; padding: 10px 15px; border-radius: 15px; font-size: 0.9rem; border: 1px solid var(--border); animation: fadeIn 0.2s ease; position: relative; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         
-        .msg.sent { align-self: flex-start; background: var(--sent-bg); border-bottom-left-radius: 4px; border-color: var(--accent); }
-        .msg.received { align-self: flex-end; background: var(--recv-bg); border-bottom-right-radius: 4px; border-color: rgba(255,255,255,0.1); }
-        .msg-info { display: flex; justify-content: space-between; font-size: 0.65rem; font-family: 'Fira Code'; margin-bottom: 5px; color: var(--accent); opacity: 0.8; }
+        .msg.sent { align-self: flex-start; background: var(--sent-bg); border-color: var(--accent); border-bottom-left-radius: 2px; }
+        .msg.received { align-self: flex-end; background: var(--recv-bg); border-bottom-right-radius: 2px; }
+        .msg-info { display: flex; justify-content: space-between; font-size: 0.6rem; color: var(--accent); margin-bottom: 4px; font-family: 'Fira Code'; }
 
-        /* Input Area */
-        .input-area { padding: 20px; background: linear-gradient(to top, var(--bg-dark), transparent); }
-        .input-wrapper { display: flex; gap: 10px; align-items: center; background: rgba(13, 17, 23, 0.9); padding: 8px 15px; border-radius: 20px; border: 1px solid var(--border); backdrop-filter: blur(15px); }
-        .input-wrapper input { flex: 1; background: transparent; border: none; color: white; padding: 10px; font-size: 1rem; outline: none; }
+        /* Input area */
+        .input-area { padding: 15px; background: var(--bg-dark); }
+        .input-wrapper { display: flex; gap: 8px; background: rgba(255,255,255,0.03); padding: 5px 10px; border-radius: 15px; border: 1px solid var(--border); }
+        .input-wrapper input { flex: 1; background: transparent; border: none; color: #fff; padding: 10px; outline: none; }
 
-        .btn-icon { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); color: var(--accent); border: 1px solid var(--border); cursor: pointer; transition: 0.3s; }
-        .btn-icon:hover { background: var(--accent); color: #000; transform: translateY(-2px); }
+        .btn-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); color: var(--accent); border: 1px solid var(--border); cursor: pointer; transition: 0.2s; }
+        .btn-icon:hover { background: var(--accent); color: #000; }
         .btn-send { background: var(--accent); color: #000; border: none; }
 
-        /* Mobile Sidebar */
+        /* Responsive Mobile */
         @media (max-width: 768px) {
-            .chat-nav { position: fixed; right: -100%; height: 100dvh; width: 85%; }
-            .chat-nav.open { right: 0; box-shadow: -20px 0 50px rgba(0,0,0,0.8); }
+            .chat-nav { position: absolute; right: 0; top: 0; bottom: 0; transform: translateX(100%); width: 80%; }
+            .chat-nav.open { transform: translateX(0); box-shadow: -10px 0 30px #000; }
         }
 
-        .status-dot { width: 10px; height: 10px; background: var(--success); border-radius: 50%; display: inline-block; margin-left: 8px; box-shadow: 0 0 10px var(--success); }
-        .status-offline { background: var(--danger); box-shadow: 0 0 10px var(--danger); }
+        .status-dot { width: 8px; height: 8px; background: var(--success); border-radius: 50%; display: inline-block; margin-left: 5px; box-shadow: 0 0 8px var(--success); }
+        .status-offline { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
         
-        /* New: Tooltip for decryption errors */
-        .decryption-error { color: var(--danger); font-style: italic; font-size: 0.8rem; }
+        .theme-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; padding: 10px; }
+        .theme-dot { height: 25px; border-radius: 5px; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); }
     </style>
 </head>
-<body oncontextmenu="return false;">
+<body>
 
 <canvas id="matrix-canvas"></canvas>
 
 <div id="vault-lock">
     <div class="lock-box">
-        <i class="fas fa-user-secret" style="font-size: 3.5rem; color: var(--accent); margin-bottom: 20px;"></i>
-        <h2 style="font-family: 'Fira Code'; margin: 0; letter-spacing: 2px;">KERNEL-0X0</h2>
-        <p style="color: #8b949e; font-size: 0.7rem; margin-bottom: 25px;">LEVEL 17.1 ENCRYPTION ACTIVE</p>
-        <input type="password" id="vault-pass" placeholder="مفتاح فك التشفير..." style="width: 100%; padding: 15px; background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 12px; color: var(--accent); text-align: center; margin-bottom: 20px; outline: none;">
-        <button onclick="attemptAccess()" style="width: 100%; padding: 15px; background: var(--accent); color: #000; border: none; border-radius: 12px; font-weight: bold; cursor: pointer;">دخول النفق</button>
+        <i class="fas fa-terminal" style="font-size: 2rem; color: var(--accent); margin-bottom: 15px;"></i>
+        <h3 style="margin:0; font-family: 'Fira Code';">KERNEL-0X0 ACCESS</h3>
+        <p style="font-size: 0.6rem; color: #666; margin-bottom: 15px;">ENCRYPTION LAYER ACTIVE</p>
+        <input type="password" id="vault-pass" placeholder="Enter Tunnel Key..." style="width:100%; padding:12px; background:#000; border:1px solid var(--border); border-radius:8px; color:var(--accent); text-align:center; margin-bottom:15px; outline:none;">
+        <button onclick="attemptAccess()" style="width:100%; padding:12px; background:var(--accent); color:#000; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">AUTH_NODE</button>
     </div>
 </div>
 
 <div class="app-container">
     <aside class="chat-nav" id="sidebar">
-        <div style="padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-family: 'Fira Code'; color: var(--accent); font-weight: bold;">TUNNEL_MANAGER</span>
-            <button onclick="toggleSidebar()" class="btn-icon" style="width:30px; height:30px; border:none;"><i class="fas fa-times"></i></button>
+        <div style="padding:15px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:0.8rem; font-weight:bold; color:var(--accent);">TUNNELS_OS</span>
+            <i class="fas fa-times" onclick="toggleSidebar()" style="cursor:pointer;"></i>
         </div>
-        
         <div class="tunnel-list" id="tunnels-container"></div>
-
-        <div class="theme-section">
-            <span style="font-size: 0.75rem; color: var(--accent); font-weight: bold;">مصفوفة الألوان (20 نمط)</span>
-            <div class="theme-grid" id="theme-grid"></div>
-        </div>
-
-        <div style="padding: 20px; display: flex; flex-direction: column; gap: 10px;">
-            <button onclick="createNewTunnel()" style="width: 100%; padding: 12px; background: var(--accent); color: #000; border: none; border-radius: 10px; font-weight: bold; cursor: pointer;">+ نفق جديد</button>
-            <button onclick="panicDestruct()" style="width: 100%; padding: 10px; background: rgba(255,0,60,0.1); color: var(--danger); border: 1px solid var(--danger); border-radius: 10px; cursor: pointer;">تدمير البيانات</button>
+        <div class="theme-grid" id="theme-grid"></div>
+        <div style="padding:15px; display:flex; flex-direction:column; gap:8px;">
+            <button onclick="createNewTunnel()" class="btn-icon" style="width:100%; border-radius:8px;">+ نفق جديد</button>
+            <button onclick="panicDestruct()" style="width:100%; padding:10px; background:rgba(255,0,60,0.1); color:var(--danger); border:1px solid var(--danger); border-radius:8px; cursor:pointer;">تدمير البيانات</button>
         </div>
     </aside>
 
     <main class="chat-main">
-        <header style="padding: 15px 20px; background: rgba(0,0,0,0.6); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); backdrop-filter: blur(10px);">
-            <div style="display: flex; align-items: center; gap: 15px;">
+        <header>
+            <div style="display:flex; align-items:center; gap:12px;">
                 <button onclick="toggleSidebar()" class="btn-icon"><i class="fas fa-bars"></i></button>
                 <div>
-                    <div id="current-tunnel-name" style="font-weight: bold; font-size: 1rem;">SIGNAL_X</div>
-                    <div style="font-size: 0.6rem; color: var(--accent); font-family: 'Fira Code';">
-                        <span id="conn-status" class="status-dot"></span>
-                        <span id="protocol-info">CONNECTING...</span>
+                    <div id="current-tunnel-name" style="font-weight:bold; font-size:0.9rem;">MAIN_NODE</div>
+                    <div style="font-size:0.5rem; color:var(--accent);">
+                        <span id="conn-status" class="status-dot"></span> <span id="protocol-info">SECURE_LINK</span>
                     </div>
                 </div>
             </div>
-            <div style="display: flex; gap: 8px;">
-                <button onclick="copyTunnelURL()" class="btn-icon"><i class="fas fa-link"></i></button>
-                <button onclick="clearCurrentChat()" class="btn-icon" style="color:var(--danger)"><i class="fas fa-trash-can"></i></button>
+            <div style="display:flex; gap:8px;">
+                <button onclick="copyTunnelURL()" class="btn-icon"><i class="fas fa-share-nodes"></i></button>
+                <button onclick="clearCurrentChat()" class="btn-icon" style="color:var(--danger)"><i class="fas fa-eraser"></i></button>
             </div>
         </header>
 
@@ -137,291 +133,172 @@
 
         <div class="input-area">
             <div class="input-wrapper">
-                <input type="text" id="userInput" placeholder="رسالة مشفرة..." autocomplete="off">
-                <button id="sendBtn" class="btn-icon btn-send"><i class="fas fa-paper-plane"></i></button>
+                <input type="text" id="userInput" placeholder="Signal text..." autocomplete="off">
+                <button onclick="sendSignal()" class="btn-icon btn-send"><i class="fas fa-bolt"></i></button>
             </div>
         </div>
     </main>
 </div>
 
 <script>
-    // --- Configuration & Themes ---
-    const themes = [
-        { name: 'Matrix', bg: '#010409', acc: '#00f2ff', pnl: 'rgba(13, 17, 23, 0.95)' },
-        { name: 'Blood', bg: '#0d0000', acc: '#ff4d4d', pnl: 'rgba(30, 5, 5, 0.95)' },
-        { name: 'Toxic', bg: '#030803', acc: '#39ff14', pnl: 'rgba(10, 25, 10, 0.95)' },
-        { name: 'Cyber', bg: '#0d001a', acc: '#ff00ff', pnl: 'rgba(30, 0, 50, 0.95)' },
-        { name: 'Deep', bg: '#000814', acc: '#00b4d8', pnl: 'rgba(0, 20, 40, 0.95)' },
-        { name: 'Gold', bg: '#0f0f0f', acc: '#ffbe0b', pnl: 'rgba(30, 30, 10, 0.95)' },
-        { name: 'Emerald', bg: '#001a1a', acc: '#2ec4b6', pnl: 'rgba(1, 34, 34, 0.95)' },
-        { name: 'Sunset', bg: '#1a0f0f', acc: '#ff5400', pnl: 'rgba(45, 20, 20, 0.95)' },
-        { name: 'Midnight', bg: '#000000', acc: '#3a86ff', pnl: 'rgba(10, 10, 30, 0.95)' },
-        { name: 'Neon', bg: '#050505', acc: '#00ff88', pnl: 'rgba(20, 30, 25, 0.95)' },
-        { name: 'Ghost', bg: '#ffffff', acc: '#2d3436', pnl: 'rgba(230, 230, 230, 0.95)', txt: '#1a1a1a' },
-        { name: 'Arctic', bg: '#f0f4f8', acc: '#0984e3', pnl: 'rgba(255,255,255,0.9)', txt: '#2d3436' },
-        { name: 'Coffee', bg: '#1b1212', acc: '#d4a373', pnl: 'rgba(45, 30, 30, 0.95)' },
-        { name: 'Violet', bg: '#1a1a2e', acc: '#e94560', pnl: 'rgba(22, 33, 62, 0.95)' },
-        { name: 'Ocean', bg: '#011627', acc: '#4cc9f0', pnl: 'rgba(1, 30, 50, 0.95)' },
-        { name: 'Lava', bg: '#120000', acc: '#d00000', pnl: 'rgba(30, 0, 0, 0.95)' },
-        { name: 'Forest', bg: '#0a1a0a', acc: '#52b788', pnl: 'rgba(20, 40, 20, 0.95)' },
-        { name: 'Carbon', bg: '#121212', acc: '#f8f9fa', pnl: 'rgba(30, 30, 30, 0.95)' },
-        { name: 'Borg', bg: '#000000', acc: '#39ff14', pnl: 'rgba(15, 15, 15, 0.95)' },
-        { name: 'Nord', bg: '#2e3440', acc: '#88c0d0', pnl: 'rgba(59, 66, 82, 0.95)' }
-    ];
-
+    // Configuration
+    const socketURL = "wss://vip-arm-fixed.onrender.com/chat";
+    let socket;
     let currentTunnelID = new URLSearchParams(window.location.search).get('room') || 'Global_Node';
-    let tunnels = JSON.parse(localStorage.getItem('k0x0_tunnels')) || [{id: 'Global_Node', name: 'قناة الاختراق العامة', key: 'KERNEL_DEFAULT'}];
-    const myUID = localStorage.getItem('k0x0_uid') || "NODE-" + Math.random().toString(16).substr(2, 4).toUpperCase();
+    let tunnels = JSON.parse(localStorage.getItem('k0x0_tunnels')) || [{id: 'Global_Node', name: 'القناة العامة', key: 'KERNEL_DEFAULT'}];
+    const myUID = localStorage.getItem('k0x0_uid') || "NODE-" + Math.random().toString(16).slice(2,6).toUpperCase();
     localStorage.setItem('k0x0_uid', myUID);
 
-    // --- WebSocket Logic (Based on your Render logs) ---
-    // تم ربط الكود بالسيرفر الموضح في الصور
-    const socketURL = "wss://vip-arm-fixed.onrender.com/chat"; 
-    let socket;
-
     function initWebSocket() {
-        try {
-            socket = new WebSocket(`${socketURL}?room=${currentTunnelID}`);
-            
-            socket.onopen = () => {
-                document.getElementById('conn-status').classList.remove('status-offline');
-                document.getElementById('protocol-info').innerText = "AES_256_GCM | NODE_ONLINE";
-            };
-
-            socket.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                if (data.sender !== myUID) {
-                    processIncomingSignal(data);
-                }
-            };
-
-            socket.onclose = () => {
-                document.getElementById('conn-status').classList.add('status-offline');
-                document.getElementById('protocol-info').innerText = "NODE_OFFLINE | RECONNECTING...";
-                setTimeout(initWebSocket, 5000);
-            };
-        } catch(e) { console.error("Socket Error", e); }
+        if(socket) socket.close();
+        socket = new WebSocket(`${socketURL}?room=${currentTunnelID}`);
+        socket.onopen = () => {
+            document.getElementById('conn-status').classList.remove('status-offline');
+            document.getElementById('protocol-info').innerText = "AES_256_ACTIVE";
+        };
+        socket.onmessage = (e) => {
+            const data = JSON.parse(e.data);
+            if(data.sender !== myUID) processIncoming(data);
+        };
+        socket.onclose = () => {
+            document.getElementById('conn-status').classList.add('status-offline');
+            setTimeout(initWebSocket, 3000);
+        };
     }
 
-    // --- Core Logic ---
-    window.onload = () => {
-        initThemes();
-        loadPrefs();
-        renderTunnelList();
-        drawMatrix();
-        
-        const activeTunnel = tunnels.find(t => t.id === currentTunnelID);
-        if (currentTunnelID !== 'Global_Node' && !sessionStorage.getItem('unlocked_' + currentTunnelID)) {
-            document.getElementById('vault-lock').style.display = 'flex';
-        } else {
-            unlockVault();
-        }
-    };
-
-    function unlockVault() {
-        document.getElementById('vault-lock').style.opacity = '0';
-        setTimeout(() => {
-            document.getElementById('vault-lock').style.display = 'none';
-            loadChatHistory();
-            initWebSocket();
-        }, 500);
-    }
-
-    function attemptAccess() {
-        const pass = document.getElementById('vault-pass').value;
-        const tunnel = tunnels.find(t => t.id === currentTunnelID);
-        if (tunnel && tunnel.key === pass) {
-            sessionStorage.setItem('unlocked_' + currentTunnelID, 'true');
-            unlockVault();
-        } else {
-            alert("فشل التحقق: مفتاح التشفير خاطئ!");
-        }
-    }
-
-    // --- Messaging Engine ---
-    document.getElementById('sendBtn').onclick = sendSignal;
-    document.getElementById('userInput').onkeypress = (e) => { if(e.key === 'Enter') sendSignal(); };
-
-    function sendSignal() {
-        const input = document.getElementById('userInput');
-        const text = input.value.trim();
-        if(!text) return;
-
-        const tunnel = tunnels.find(t => t.id === currentTunnelID);
-        const encrypted = CryptoJS.AES.encrypt(text, tunnel.key).toString();
-        const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-
-        const payload = { encText: encrypted, sender: myUID, time: time, room: currentTunnelID };
-        
-        // Save locally
-        saveMsgToLocal(payload);
-        pushMsgToUI(text, myUID, time, true);
-        
-        // Send via Socket
-        if(socket && socket.readyState === WebSocket.OPEN) {
-            socket.send(JSON.stringify(payload));
-        }
-
-        input.value = "";
-    }
-
-    function processIncomingSignal(data) {
+    function processIncoming(data) {
         const tunnel = tunnels.find(t => t.id === currentTunnelID);
         try {
             const bytes = CryptoJS.AES.decrypt(data.encText, tunnel.key);
-            const decrypted = bytes.toString(CryptoJS.enc.Utf8);
-            if (decrypted) {
-                pushMsgToUI(decrypted, data.sender, data.time, false);
-                saveMsgToLocal(data);
+            const dec = bytes.toString(CryptoJS.enc.Utf8);
+            if(dec) {
+                pushUI(dec, data.sender, data.time, false);
+                saveMsg(data);
             }
-        } catch(e) {
-            console.log("Decryption Error - Possible key mismatch");
+        } catch(err) { console.error("Decryption failed"); }
+    }
+
+    function sendSignal() {
+        const inp = document.getElementById('userInput');
+        const txt = inp.value.trim();
+        if(!txt) return;
+
+        const tunnel = tunnels.find(t => t.id === currentTunnelID);
+        const encrypted = CryptoJS.AES.encrypt(txt, tunnel.key).toString();
+        const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        const payload = { encText: encrypted, sender: myUID, time: time, room: currentTunnelID };
+
+        if(socket && socket.readyState === 1) {
+            socket.send(JSON.stringify(payload));
+            pushUI(txt, myUID, time, true);
+            saveMsg(payload);
+            inp.value = "";
         }
     }
 
-    function pushMsgToUI(text, sender, time, isSent) {
+    function pushUI(text, sender, time, isMe) {
         const box = document.getElementById('chat-box');
-        const div = document.createElement('div');
-        div.className = `msg ${isSent ? 'sent' : 'received'}`;
-        div.innerHTML = `
-            <div class="msg-info">
-                <span>${sender === myUID ? 'YOU' : 'REMOTE_NODE'}</span>
-                <span>${time}</span>
-            </div>
-            <div class="msg-content">${text}</div>
-        `;
-        box.appendChild(div);
+        const d = document.createElement('div');
+        d.className = `msg ${isMe ? 'sent' : 'received'}`;
+        d.innerHTML = `<div class="msg-info"><span>${sender}</span><span>${time}</span></div><div>${text}</div>`;
+        box.appendChild(d);
         box.scrollTop = box.scrollHeight;
     }
 
-    // --- Storage & History ---
-    function saveMsgToLocal(data) {
-        let history = JSON.parse(localStorage.getItem('hist_' + currentTunnelID)) || [];
-        history.push(data);
-        if(history.length > 100) history.shift(); // Keep last 100
-        localStorage.setItem('hist_' + currentTunnelID, JSON.stringify(history));
+    function saveMsg(data) {
+        let h = JSON.parse(localStorage.getItem('hist_'+currentTunnelID)) || [];
+        h.push(data);
+        if(h.length > 50) h.shift();
+        localStorage.setItem('hist_'+currentTunnelID, JSON.stringify(h));
     }
 
-    function loadChatHistory() {
-        const tunnel = tunnels.find(t => t.id === currentTunnelID);
-        const history = JSON.parse(localStorage.getItem('hist_' + currentTunnelID)) || [];
+    function loadHistory() {
         const box = document.getElementById('chat-box');
         box.innerHTML = "";
-        
-        history.forEach(data => {
+        const tunnel = tunnels.find(t => t.id === currentTunnelID);
+        const h = JSON.parse(localStorage.getItem('hist_'+currentTunnelID)) || [];
+        h.forEach(m => {
             try {
-                const bytes = CryptoJS.AES.decrypt(data.encText, tunnel.key);
-                const decrypted = bytes.toString(CryptoJS.enc.Utf8);
-                pushMsgToUI(decrypted || "Error: Decryption Failed", data.sender, data.time, data.sender === myUID);
-            } catch(e) {
-                pushMsgToUI("⚠️ محتوى مشفر بمفتاح قديم", data.sender, data.time, data.sender === myUID);
-            }
+                const b = CryptoJS.AES.decrypt(m.encText, tunnel.key);
+                pushUI(b.toString(CryptoJS.enc.Utf8), m.sender, m.time, m.sender === myUID);
+            } catch(e) {}
         });
     }
 
-    // --- UI Helpers ---
-    function initThemes() {
-        const grid = document.getElementById('theme-grid');
-        themes.forEach(t => {
-            const dot = document.createElement('div');
-            dot.className = 'theme-dot';
-            dot.style.background = `linear-gradient(135deg, ${t.bg} 50%, ${t.acc} 50%)`;
-            dot.title = t.name;
-            dot.onclick = () => applyTheme(t);
-            grid.appendChild(dot);
-        });
+    function attemptAccess() {
+        const p = document.getElementById('vault-pass').value;
+        const t = tunnels.find(x => x.id === currentTunnelID);
+        if(t && t.key === p) {
+            sessionStorage.setItem('unlock_'+currentTunnelID, '1');
+            document.getElementById('vault-lock').style.display = 'none';
+            initWebSocket();
+            loadHistory();
+        } else { alert("ACCESS_DENIED"); }
     }
 
-    function applyTheme(t) {
-        const root = document.documentElement;
-        root.style.setProperty('--bg-dark', t.bg);
-        root.style.setProperty('--accent', t.acc);
-        root.style.setProperty('--panel-dark', t.pnl);
-        root.style.setProperty('--text-main', t.txt || '#e6edf3');
-        root.style.setProperty('--sent-bg', t.acc + '15');
-        localStorage.setItem('k0x0_theme', JSON.stringify(t));
-    }
-
-    function renderTunnelList() {
-        const container = document.getElementById('tunnels-container');
-        container.innerHTML = "";
-        tunnels.forEach(t => {
-            const div = document.createElement('div');
-            div.className = `tunnel-item ${t.id === currentTunnelID ? 'active' : ''}`;
-            div.onclick = () => window.location.href = `?room=${t.id}`;
-            div.innerHTML = `
-                <div class="msg-info"><span>${t.id}</span><i class="fas fa-shield-alt"></i></div>
-                <div style="font-weight:bold;">${t.name}</div>
-            `;
-            container.appendChild(div);
-        });
-        const current = tunnels.find(t => t.id === currentTunnelID);
-        if(current) document.getElementById('current-tunnel-name').innerText = current.name;
-    }
-
+    function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+    
     function createNewTunnel() {
-        const name = prompt("اسم النفق:");
-        const key = prompt("مفتاح التشفير:");
-        if (name && key) {
-            const id = "NODE_" + Math.random().toString(36).substr(2, 5).toUpperCase();
-            tunnels.push({id, name, key});
+        const n = prompt("Name:");
+        const k = prompt("Key:");
+        if(n && k) {
+            const id = "NODE_" + Math.random().toString(36).slice(2,7).toUpperCase();
+            tunnels.push({id, name:n, key:k});
             localStorage.setItem('k0x0_tunnels', JSON.stringify(tunnels));
-            window.location.href = `?room=${id}`;
-        }
-    }
-
-    function clearCurrentChat() {
-        if(confirm("مسح السجل المحلي لهذا النفق؟")) {
-            localStorage.removeItem('hist_' + currentTunnelID);
-            location.reload();
-        }
-    }
-
-    function panicDestruct() {
-        if(confirm("تدمير شامل لجميع الأنفاق والمفاتيح؟")) {
-            localStorage.clear();
-            window.location.href = window.location.pathname;
+            location.href = "?room=" + id;
         }
     }
 
     function copyTunnelURL() {
-        navigator.clipboard.writeText(window.location.href);
-        alert("تم نسخ رابط النفق المشفر!");
+        navigator.clipboard.writeText(location.href);
+        alert("تم نسخ الرابط");
     }
 
-    function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
-
-    function loadPrefs() {
-        const savedTheme = localStorage.getItem('k0x0_theme');
-        if(savedTheme) applyTheme(JSON.parse(savedTheme));
+    function clearCurrentChat() {
+        localStorage.removeItem('hist_'+currentTunnelID);
+        location.reload();
     }
 
-    // --- Optimized Matrix Effect ---
+    function panicDestruct() {
+        if(confirm("تدمير شامل؟")) { localStorage.clear(); location.href = location.pathname; }
+    }
+
+    // Matrix Lite
     function drawMatrix() {
-        const canvas = document.getElementById('matrix-canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        const fontSize = 16;
-        const columns = canvas.width / fontSize;
-        const drops = Array(Math.floor(columns)).fill(1);
-
+        const c = document.getElementById('matrix-canvas');
+        const ctx = c.getContext('2d');
+        c.width = window.innerWidth; c.height = window.innerHeight;
+        const drops = Array(Math.floor(c.width/20)).fill(1);
         function draw() {
-            ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent');
-            ctx.font = fontSize + "px 'Fira Code'";
-            
+            ctx.fillStyle = "rgba(1, 4, 9, 0.1)";
+            ctx.fillRect(0,0,c.width,c.height);
+            ctx.fillStyle = "#00f2ff";
             drops.forEach((y, i) => {
-                const text = String.fromCharCode(0x30A0 + Math.random() * 33);
-                ctx.fillText(text, i * fontSize, y * fontSize);
-                if (y * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                ctx.fillText(String.fromCharCode(Math.random()*128), i*20, y*20);
+                if(y*20 > c.height && Math.random() > 0.98) drops[i] = 0;
                 drops[i]++;
             });
-            requestAnimationFrame(draw);
         }
-        draw();
+        setInterval(draw, 50);
     }
+
+    window.onload = () => {
+        drawMatrix();
+        const container = document.getElementById('tunnels-container');
+        tunnels.forEach(t => {
+            const d = document.createElement('div');
+            d.className = `tunnel-item ${t.id === currentTunnelID ? 'active' : ''}`;
+            d.innerHTML = `<div style="font-size:0.7rem; color:var(--accent)">${t.id}</div><div style="font-weight:bold">${t.name}</div>`;
+            d.onclick = () => location.href = "?room=" + t.id;
+            container.appendChild(d);
+        });
+
+        if(currentTunnelID === 'Global_Node' || sessionStorage.getItem('unlock_'+currentTunnelID)) {
+            document.getElementById('vault-lock').style.display = 'none';
+            initWebSocket();
+            loadHistory();
+        }
+    };
 </script>
 </body>
 </html>
