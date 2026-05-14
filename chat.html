@@ -3,92 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>VIP_ARM | Kernel-0x0 OMEGA V16.3</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <title>KERNEL-0X0 | OMEGA V17.0</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
 
     <style>
         :root {
             --bg-dark: #010409;
-            --panel-dark: rgba(13, 17, 23, 0.85);
+            --panel-dark: rgba(13, 17, 23, 0.9);
             --accent: #00f2ff;
             --danger: #ff003c;
+            --success: #00ff88;
             --text-main: #e6edf3;
             --sent-bg: rgba(0, 242, 255, 0.1);
             --recv-bg: rgba(255, 255, 255, 0.05);
             --border: rgba(48, 54, 61, 0.8);
-            --sidebar-w: 300px;
-            --glass: blur(15px);
+            --sidebar-w: 320px;
+            --glass: blur(20px) saturate(180%);
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; scrollbar-width: thin; scrollbar-color: var(--accent) transparent; }
-        body, html { height: 100dvh; margin: 0; padding: 0; overflow: hidden; background: var(--bg-dark); font-family: 'Cairo', sans-serif; color: var(--text-main); position: fixed; width: 100%; transition: 0.5s ease; background-size: cover; background-position: center; }
+        body, html { height: 100dvh; margin: 0; padding: 0; overflow: hidden; background: var(--bg-dark); font-family: 'Cairo', sans-serif; color: var(--text-main); position: fixed; width: 100%; transition: background 0.5s ease; background-size: cover; background-position: center; }
 
-        #matrix-canvas { position: fixed; top: 0; left: 0; opacity: 0.15; z-index: 0; pointer-events: none; }
+        #matrix-canvas { position: fixed; top: 0; left: 0; opacity: 0.2; z-index: 0; pointer-events: none; }
 
         /* Secure Overlay */
-        #vault-lock { position: fixed; top:0; left:0; width:100%; height:100dvh; background: var(--bg-dark); z-index: 9999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(20px); }
-        .lock-box { background: var(--panel-dark); padding: 40px; border-radius: 24px; border: 1px solid var(--accent); text-align: center; width: 90%; max-width: 400px; box-shadow: 0 0 50px rgba(0, 242, 255, 0.1); backdrop-filter: var(--glass); }
+        #vault-lock { position: fixed; top:0; left:0; width:100%; height:100dvh; background: var(--bg-dark); z-index: 9999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(30px); }
+        .lock-box { background: var(--panel-dark); padding: 40px; border-radius: 30px; border: 1px solid var(--accent); text-align: center; width: 90%; max-width: 400px; box-shadow: 0 0 50px rgba(0, 242, 255, 0.2); animation: scaleUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes scaleUp { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
         .app-container { display: flex; height: 100dvh; width: 100vw; position: relative; z-index: 1; }
         
         /* Sidebar Enhanced */
-        .chat-nav { width: var(--sidebar-w); background: var(--panel-dark); border-left: 1px solid var(--border); display: flex; flex-direction: column; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1000; backdrop-filter: var(--glass); }
-        .tunnel-list { flex: 1; overflow-y: auto; padding: 10px; }
-        .tunnel-item { padding: 12px 15px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 8px; cursor: pointer; transition: 0.2s; }
-        .tunnel-item:hover { border-color: var(--accent); background: rgba(0, 242, 255, 0.05); }
-        .tunnel-item.active { border-right: 4px solid var(--accent); background: rgba(0, 242, 255, 0.1); }
+        .chat-nav { width: var(--sidebar-w); background: var(--panel-dark); border-left: 1px solid var(--border); display: flex; flex-direction: column; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1000; backdrop-filter: var(--glass); }
+        .tunnel-list { flex: 1; overflow-y: auto; padding: 15px; }
+        .tunnel-item { padding: 15px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 15px; margin-bottom: 10px; cursor: pointer; transition: 0.3s; position: relative; overflow: hidden; }
+        .tunnel-item:hover { border-color: var(--accent); background: rgba(0, 242, 255, 0.08); transform: translateX(-5px); }
+        .tunnel-item.active { border-right: 5px solid var(--accent); background: rgba(0, 242, 255, 0.12); }
         
-        /* Themes Section in Sidebar */
-        .theme-section { padding: 15px; border-top: 1px solid var(--border); max-height: 200px; overflow-y: auto; }
-        .theme-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
-        .theme-dot { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #fff; cursor: pointer; transition: 0.2s; }
-        .theme-dot:hover { transform: scale(1.2); }
+        /* Themes Section */
+        .theme-section { padding: 20px; border-top: 1px solid var(--border); background: rgba(0,0,0,0.2); }
+        .theme-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 15px; }
+        .theme-dot { width: 35px; height: 35px; border-radius: 10px; border: 2px solid rgba(255,255,255,0.1); cursor: pointer; transition: 0.3s; position: relative; }
+        .theme-dot:hover { transform: scale(1.1) rotate(10deg); border-color: #fff; }
 
-        .chat-main { flex: 1; display: flex; flex-direction: column; min-width: 0; background: rgba(1, 4, 9, 0.4); backdrop-filter: var(--glass); }
+        .chat-main { flex: 1; display: flex; flex-direction: column; min-width: 0; background: rgba(1, 4, 9, 0.2); }
 
-        /* Messages Styling */
-        .messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
-        .msg { max-width: 80%; padding: 12px 18px; border-radius: 18px; font-size: 0.95rem; border: 1px solid var(--border); position: relative; backdrop-filter: blur(5px); animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .msg.sent { align-self: flex-start; background: var(--sent-bg); border-bottom-left-radius: 4px; border-color: var(--accent); }
+        /* Messages */
+        .messages { flex: 1; overflow-y: auto; padding: 25px; display: flex; flex-direction: column; gap: 15px; }
+        .msg { max-width: 85%; padding: 14px 20px; border-radius: 20px; font-size: 0.95rem; border: 1px solid var(--border); position: relative; animation: slideIn 0.3s ease; line-height: 1.6; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(15px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        
+        .msg.sent { align-self: flex-start; background: var(--sent-bg); border-bottom-left-radius: 4px; border-color: var(--accent); box-shadow: 0 4px 15px rgba(0,242,255,0.05); }
         .msg.received { align-self: flex-end; background: var(--recv-bg); border-bottom-right-radius: 4px; }
-        .msg strong { display: block; font-size: 0.7rem; color: var(--accent); font-family: 'Fira Code'; margin-bottom: 4px; }
+        .msg-info { display: flex; justify-content: space-between; font-size: 0.65rem; font-family: 'Fira Code'; margin-bottom: 6px; color: var(--accent); }
 
-        .input-area { padding: 20px; background: transparent; }
-        .input-wrapper { display: flex; gap: 12px; align-items: center; background: rgba(0,0,0,0.6); padding: 8px 18px; border-radius: 50px; border: 1px solid var(--border); backdrop-filter: blur(10px); }
-        .input-wrapper input { flex: 1; background: transparent; border: none; color: white; padding: 8px; font-size: 0.95rem; outline: none; }
+        /* Input Area */
+        .input-area { padding: 25px; background: linear-gradient(to top, var(--bg-dark), transparent); }
+        .input-wrapper { display: flex; gap: 12px; align-items: center; background: rgba(13, 17, 23, 0.8); padding: 10px 20px; border-radius: 25px; border: 1px solid var(--border); backdrop-filter: blur(15px); box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .input-wrapper input { flex: 1; background: transparent; border: none; color: white; padding: 10px; font-size: 1rem; outline: none; }
 
-        .btn-action { background: none; border: none; color: var(--accent); font-size: 1.2rem; cursor: pointer; transition: 0.2s; opacity: 0.8; }
-        .btn-action:hover { opacity: 1; transform: translateY(-2px); text-shadow: 0 0 10px var(--accent); }
+        .btn-icon { width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); color: var(--accent); border: 1px solid var(--border); cursor: pointer; transition: 0.3s; }
+        .btn-icon:hover { background: var(--accent); color: #000; transform: scale(1.1); box-shadow: 0 0 15px var(--accent); }
+        .btn-send { background: var(--accent); color: #000; border: none; }
 
+        /* Responsive */
         @media (max-width: 768px) {
             .chat-nav { position: absolute; right: -100%; height: 100dvh; width: 85%; }
-            .chat-nav.open { right: 0; }
+            .chat-nav.open { right: 0; box-shadow: -20px 0 50px rgba(0,0,0,0.5); }
         }
+
+        .status-dot { width: 8px; height: 8px; background: var(--success); border-radius: 50%; display: inline-block; margin-left: 8px; box-shadow: 0 0 10px var(--success); animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
     </style>
 </head>
 <body oncontextmenu="return false;">
 
 <canvas id="matrix-canvas"></canvas>
 
+<!-- Vault Lock Screen -->
 <div id="vault-lock">
     <div class="lock-box">
-        <i class="fas fa-microchip" style="font-size: 3rem; color: var(--accent); margin-bottom: 15px;"></i>
-        <h2 style="font-family: 'Fira Code'; margin: 0; letter-spacing: 2px;">KERNEL-0X0</h2>
-        <p style="color: #8b949e; font-size: 0.7rem; margin-bottom: 25px;">V16.3 OMEGA | PERSONALIZED CRYPTO NODE</p>
-        <input type="password" id="vault-pass" placeholder="Master Access Key..." style="width: 100%; padding: 15px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 12px; color: var(--accent); text-align: center; margin-bottom: 15px; outline: none;">
-        <button onclick="attemptAccess()" style="width: 100%; padding: 15px; background: var(--accent); color: #000; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 0 20px rgba(0,242,255,0.3);">إطلاق النفق</button>
+        <i class="fas fa-shield-halved" style="font-size: 3.5rem; color: var(--accent); margin-bottom: 20px;"></i>
+        <h2 style="font-family: 'Fira Code'; margin: 0; letter-spacing: 3px;">KERNEL-0X0</h2>
+        <p style="color: #8b949e; font-size: 0.75rem; margin-bottom: 30px;">OMEGA V17.0 | ENCRYPTED NODE ACCESS</p>
+        <input type="password" id="vault-pass" placeholder="أدخل مفتاح النفق..." style="width: 100%; padding: 18px; background: rgba(0,0,0,0.4); border: 1px solid var(--border); border-radius: 15px; color: var(--accent); text-align: center; margin-bottom: 20px; outline: none; font-size: 1.1rem;">
+        <button onclick="attemptAccess()" style="width: 100%; padding: 18px; background: var(--accent); color: #000; border: none; border-radius: 15px; font-weight: 800; cursor: pointer; box-shadow: 0 0 25px rgba(0,242,255,0.4); font-size: 1rem;">فتح بوابة التشفير</button>
     </div>
 </div>
 
 <div class="app-container">
-    <div class="chat-nav" id="sidebar">
-        <div style="padding: 20px; border-bottom: 1px solid var(--border);">
+    <!-- Sidebar -->
+    <aside class="chat-nav" id="sidebar">
+        <div style="padding: 25px; border-bottom: 1px solid var(--border);">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-family: 'Fira Code'; color: var(--accent); font-weight: bold;">CONTROL PANEL</span>
-                <button onclick="toggleSidebar()" class="btn-action"><i class="fas fa-times"></i></button>
+                <span style="font-family: 'Fira Code'; color: var(--accent); font-weight: bold; font-size: 1.1rem;">TUNNEL MANAGER</span>
+                <button onclick="toggleSidebar()" class="btn-icon" style="width: 35px; height: 35px;"><i class="fas fa-xmark"></i></button>
             </div>
         </div>
         
@@ -96,82 +107,95 @@
 
         <!-- Personalization -->
         <div class="theme-section">
-            <span style="font-size: 0.8rem; font-weight: bold; color: var(--accent);">تخصيص الواجهة (20 ثيم)</span>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <span style="font-size: 0.85rem; font-weight: bold; color: var(--accent);">مصفوفة الألوان (20 ثيم)</span>
+                <i class="fas fa-palette" style="font-size: 0.8rem; opacity: 0.5;"></i>
+            </div>
             <div class="theme-grid" id="theme-grid"></div>
-            <div style="margin-top: 15px;">
-                <button onclick="document.getElementById('bg-upload').click()" style="width: 100%; padding: 8px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 5px; color: white; cursor: pointer; font-size: 0.75rem;">
-                    <i class="fas fa-image"></i> خلفية من الاستديو
+            <div style="margin-top: 20px;">
+                <button onclick="document.getElementById('bg-upload').click()" style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 12px; color: white; cursor: pointer; font-size: 0.8rem; transition: 0.3s;">
+                    <i class="fas fa-cloud-arrow-up" style="margin-left: 8px;"></i> تخصيص خلفية النفق
                 </button>
                 <input type="file" id="bg-upload" hidden accept="image/*" onchange="uploadBg(this)">
             </div>
         </div>
 
-        <div style="padding: 15px; border-top: 1px solid var(--border);">
-            <button onclick="createNewTunnel()" style="width: 100%; padding: 12px; background: var(--accent); color: black; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-bottom: 10px;">إنشاء نفق جديد</button>
-            <button onclick="panicDestruct()" style="width: 100%; padding: 10px; background: none; color: var(--danger); border: 1px solid var(--danger); border-radius: 10px; cursor: pointer; font-size: 0.8rem;">تدمير شامل للبيانات</button>
+        <div style="padding: 20px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px;">
+            <button onclick="createNewTunnel()" style="width: 100%; padding: 15px; background: var(--accent); color: black; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                <i class="fas fa-plus-square"></i> نفق تشفير جديد
+            </button>
+            <button onclick="panicDestruct()" style="width: 100%; padding: 12px; background: rgba(255,0,60,0.1); color: var(--danger); border: 1px solid var(--danger); border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 0.85rem;">
+                <i class="fas fa-skull-crossbones" style="margin-left: 8px;"></i> تدمير البروتوكول الشامل
+            </button>
         </div>
-    </div>
+    </aside>
 
-    <div class="chat-main">
-        <header style="padding: 15px 20px; background: rgba(0,0,0,0.3); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border);">
-            <div style="display: flex; align-items: center; gap: 15px;">
-                <button onclick="toggleSidebar()" class="btn-action"><i class="fas fa-bars"></i></button>
+    <!-- Main Chat -->
+    <main class="chat-main">
+        <header style="padding: 15px 25px; background: rgba(0,0,0,0.4); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); backdrop-filter: blur(10px);">
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <button onclick="toggleSidebar()" class="btn-icon"><i class="fas fa-bars-staggered"></i></button>
                 <div>
-                    <div id="current-tunnel-name" style="font-weight: bold;">Signal-X</div>
-                    <div id="status-label" style="font-size: 0.65rem; color: var(--accent); font-family: 'Fira Code';">SECURE_LINK: STABLE</div>
+                    <div id="current-tunnel-name" style="font-weight: bold; font-size: 1.1rem; letter-spacing: 1px;">SIGNAL_X</div>
+                    <div style="display: flex; align-items: center; font-size: 0.65rem; color: var(--accent); font-family: 'Fira Code'; margin-top: 4px;">
+                        <span class="status-dot"></span>
+                        AES_256_GCM | NODE_STABLE
+                    </div>
                 </div>
             </div>
-            <div style="display: flex; gap: 18px;">
-                <button onclick="refreshSync()" class="btn-action"><i class="fas fa-rotate"></i></button>
-                <button onclick="copyTunnelURL()" class="btn-action"><i class="fas fa-link"></i></button>
-                <button onclick="clearCurrentChat()" class="btn-action" style="color: var(--danger);"><i class="fas fa-eraser"></i></button>
+            <div style="display: flex; gap: 12px;">
+                <button title="مزامنة فورية" onclick="refreshSync()" class="btn-icon"><i class="fas fa-sync-alt"></i></button>
+                <button title="نسخ الرابط" onclick="copyTunnelURL()" class="btn-icon"><i class="fas fa-link"></i></button>
+                <button title="مسح السجل" onclick="clearCurrentChat()" class="btn-icon" style="color: var(--danger); border-color: rgba(255,0,60,0.3);"><i class="fas fa-eraser"></i></button>
             </div>
         </header>
 
         <div class="messages" id="chat-box"></div>
-        <div id="typing-indicator" style="padding: 10px 25px; font-size: 0.7rem; color: var(--accent); opacity: 0; transition: 0.3s;">الطرف الآخر يكتب...</div>
+        <div id="typing-indicator" style="padding: 10px 30px; font-size: 0.75rem; color: var(--accent); opacity: 0; font-family: 'Fira Code';">NODE_REMOTE IS ENCRYPTING...</div>
 
         <div class="input-area">
             <div class="input-wrapper">
-                <button class="btn-action"><i class="fas fa-plus-circle"></i></button>
-                <input type="text" id="userInput" placeholder="أرسل رسالة مشفرة..." autocomplete="off">
-                <button id="sendBtn" class="btn-action"><i class="fas fa-paper-plane"></i></button>
+                <button class="btn-icon" style="border:none; background:none;"><i class="fas fa-paperclip"></i></button>
+                <input type="text" id="userInput" placeholder="أرسل رسالة مشفرة عبر النفق..." autocomplete="off">
+                <button id="sendBtn" class="btn-icon btn-send"><i class="fas fa-paper-plane"></i></button>
             </div>
         </div>
-    </div>
+    </main>
 </div>
 
 <script>
-    // --- مصفوفة الثيمات (20 ثيم متنوع) ---
+    // --- 20 Enhanced Themes ---
     const themes = [
-        { name: 'Matrix', bg: '#010409', acc: '#00f2ff', pnl: 'rgba(13, 17, 23, 0.8)' }, // هكر
-        { name: 'RedAlert', bg: '#0f0000', acc: '#ff003c', pnl: 'rgba(40, 0, 0, 0.8)' }, // هكر
-        { name: 'Ghost', bg: '#0a0a0a', acc: '#ffffff', pnl: 'rgba(30, 30, 30, 0.8)' }, // هكر
-        { name: 'Toxic', bg: '#050a05', acc: '#39ff14', pnl: 'rgba(10, 30, 10, 0.8)' }, // هكر
-        { name: 'CyberPink', bg: '#0d001a', acc: '#ff00ff', pnl: 'rgba(30, 0, 50, 0.8)' }, // هكر
-        { name: 'DeepBlue', bg: '#000814', acc: '#003566', pnl: 'rgba(0, 29, 61, 0.8)' }, // شباب
-        { name: 'Sakura', bg: '#fff5f7', acc: '#ffb7c5', pnl: 'rgba(255, 240, 245, 0.9)', txt: '#4a4a4a' }, // بنات
-        { name: 'Lavender', bg: '#f3e5f5', acc: '#ab47bc', pnl: 'rgba(243, 229, 245, 0.9)', txt: '#4a148c' }, // بنات
-        { name: 'RoseGold', bg: '#2d1b1b', acc: '#e0a899', pnl: 'rgba(60, 40, 40, 0.8)' }, // بنات
-        { name: 'Midnight', bg: '#000000', acc: '#ffd700', pnl: 'rgba(20, 20, 20, 0.8)' }, // شباب
-        { name: 'Ocean', bg: '#001219', acc: '#94d2bd', pnl: 'rgba(0, 95, 115, 0.8)' }, // شباب
-        { name: 'Forest', bg: '#0b130e', acc: '#588157', pnl: 'rgba(52, 78, 65, 0.8)' }, // شباب
-        { name: 'Carbon', bg: '#121212', acc: '#e5e5e5', pnl: 'rgba(40, 40, 40, 0.8)' }, // شباب
-        { name: 'NeonCity', bg: '#000000', acc: '#3d5afe', pnl: 'rgba(26, 35, 126, 0.8)' }, // هكر
-        { name: 'Sunset', bg: '#240b36', acc: '#c31432', pnl: 'rgba(50, 10, 40, 0.8)' }, // بنات/شباب
-        { name: 'Arctic', bg: '#f0f4f8', acc: '#0077b6', pnl: 'rgba(255, 255, 255, 0.9)', txt: '#023e8a' }, // عام
-        { name: 'BloodMoon', bg: '#1a0000', acc: '#800000', pnl: 'rgba(40, 0, 0, 0.8)' }, // هكر
-        { name: 'SkyHigh', bg: '#e0f7fa', acc: '#4dd0e1', pnl: 'rgba(255, 255, 255, 0.9)', txt: '#006064' }, // بنات
-        { name: 'Void', bg: '#020205', acc: '#7b2cbf', pnl: 'rgba(16, 0, 43, 0.8)' }, // هكر
-        { name: 'GoldStandard', bg: '#1c1c1c', acc: '#d4af37', pnl: 'rgba(40, 40, 40, 0.8)' } // شباب
+        { name: 'Matrix', bg: '#010409', acc: '#00f2ff', pnl: 'rgba(13, 17, 23, 0.9)' },
+        { name: 'Blood', bg: '#0d0000', acc: '#ff4d4d', pnl: 'rgba(30, 5, 5, 0.9)' },
+        { name: 'Toxic', bg: '#030803', acc: '#39ff14', pnl: 'rgba(10, 25, 10, 0.9)' },
+        { name: 'Cyber', bg: '#0d001a', acc: '#ff00ff', pnl: 'rgba(30, 0, 50, 0.9)' },
+        { name: 'Deep', bg: '#000814', acc: '#00b4d8', pnl: 'rgba(0, 20, 40, 0.9)' },
+        { name: 'Gold', bg: '#0f0f0f', acc: '#ffbe0b', pnl: 'rgba(30, 30, 10, 0.9)' },
+        { name: 'Ghost', bg: '#ffffff', acc: '#2d3436', pnl: 'rgba(240, 240, 240, 0.9)', txt: '#2d3436' },
+        { name: 'Violet', bg: '#1a1a2e', acc: '#e94560', pnl: 'rgba(22, 33, 62, 0.9)' },
+        { name: 'Emerald', bg: '#001a1a', acc: '#2ec4b6', pnl: 'rgba(1, 34, 34, 0.9)' },
+        { name: 'Orange', bg: '#1c0d00', acc: '#fb8500', pnl: 'rgba(40, 20, 0, 0.9)' },
+        { name: 'Sakura', bg: '#2d1b24', acc: '#ffafcc', pnl: 'rgba(60, 30, 45, 0.9)' },
+        { name: 'Arctic', bg: '#e0f2f1', acc: '#00796b', pnl: 'rgba(255,255,255,0.8)', txt: '#004d40' },
+        { name: 'Lavender', bg: '#120d16', acc: '#bd93f9', pnl: 'rgba(25, 20, 35, 0.9)' },
+        { name: 'Carbon', bg: '#000000', acc: '#ffffff', pnl: 'rgba(20, 20, 20, 0.9)' },
+        { name: 'Sunset', bg: '#1a0f0f', acc: '#ff5400', pnl: 'rgba(45, 20, 20, 0.9)' },
+        { name: 'Ocean', bg: '#011627', acc: '#4cc9f0', pnl: 'rgba(1, 30, 50, 0.9)' },
+        { name: 'Coffee', bg: '#1b1212', acc: '#d4a373', pnl: 'rgba(45, 30, 30, 0.9)' },
+        { name: 'Mint', bg: '#f8f9fa', acc: '#2b9348', pnl: 'rgba(255,255,255,0.9)', txt: '#1b4332' },
+        { name: 'Midnight', bg: '#000000', acc: '#3a86ff', pnl: 'rgba(10, 10, 30, 0.9)' },
+        { name: 'Neon', bg: '#050505', acc: '#00ff88', pnl: 'rgba(20, 30, 25, 0.9)' }
     ];
 
-    // --- المنطق البرمجي المطور ---
+    // --- Core Logic ---
+    let currentTunnelID = new URLSearchParams(window.location.search).get('room') || 'Global_Node';
+    let tunnels = JSON.parse(localStorage.getItem('k0x0_tunnels')) || [{id: 'Global_Node', name: 'Global Signal', key: 'KERNEL_DEFAULT'}];
+    const myUID = localStorage.getItem('k0x0_uid') || "NODE-" + Math.floor(Math.random()*10000);
+    localStorage.setItem('k0x0_uid', myUID);
 
-    let currentTunnel = new URLSearchParams(window.location.search).get('room') || 'global';
-    let tunnels = JSON.parse(localStorage.getItem('k0x0_tunnels')) || [{id: 'global', name: 'Global Signal', key: 'GLOBAL_DEF'}];
-    const myID = localStorage.getItem('k0x0_uid') || "NODE-" + Math.random().toString(36).substr(2, 4).toUpperCase();
-    localStorage.setItem('k0x0_uid', myID);
+    // Sync Channel (Real-time tab communication)
+    const channel = new BroadcastChannel('k0x0_sync_' + currentTunnelID);
 
     window.onload = () => {
         initThemes();
@@ -179,15 +203,156 @@
         renderTunnelList();
         drawMatrix();
         
-        const existing = tunnels.find(t => t.id === currentTunnel);
-        if (currentTunnel !== 'global' && !existing) {
+        const activeTunnel = tunnels.find(t => t.id === currentTunnelID);
+        if (currentTunnelID !== 'Global_Node' && (!activeTunnel || !sessionStorage.getItem('unlocked_' + currentTunnelID))) {
             document.getElementById('vault-lock').style.display = 'flex';
         } else {
             document.getElementById('vault-lock').style.display = 'none';
-            initChat();
+            loadChatHistory();
         }
+
+        // Listen for new messages
+        channel.onmessage = (event) => {
+            pushMsgToUI(event.data.msg, event.data.sender, event.data.time, false);
+        };
     };
 
+    // --- Authentication ---
+    function attemptAccess() {
+        const pass = document.getElementById('vault-pass').value;
+        if(!pass) return;
+        
+        const finger = CryptoJS.SHA256(pass).toString().substr(0, 8);
+        const tunnel = tunnels.find(t => t.id === currentTunnelID);
+
+        if (tunnel && tunnel.key !== pass) {
+            alert("خطأ: بصمة المفتاح غير متطابقة!");
+            return;
+        }
+
+        sessionStorage.setItem('unlocked_' + currentTunnelID, 'true');
+        document.getElementById('vault-lock').style.display = 'none';
+        loadChatHistory();
+    }
+
+    // --- Tunnel Management ---
+    function createNewTunnel() {
+        const name = prompt("اسم النفق الجديد:");
+        if(!name) return;
+        const key = prompt("تعيين مفتاح التشفير (Master Key):");
+        if(!key) return;
+
+        const id = "K0X0_" + Math.random().toString(36).substr(2, 6).toUpperCase();
+        tunnels.push({id, name, key});
+        localStorage.setItem('k0x0_tunnels', JSON.stringify(tunnels));
+        window.location.href = `?room=${id}`;
+    }
+
+    function renderTunnelList() {
+        const container = document.getElementById('tunnels-container');
+        container.innerHTML = "";
+        tunnels.forEach(t => {
+            const div = document.createElement('div');
+            div.className = `tunnel-item ${t.id === currentTunnelID ? 'active' : ''}`;
+            div.onclick = () => window.location.href = `?room=${t.id}`;
+            div.innerHTML = `
+                <div class="msg-info"><span>${t.id}</span><i class="fas fa-lock"></i></div>
+                <div style="font-weight:bold; color:var(--text-main)">${t.name}</div>
+            `;
+            container.appendChild(div);
+        });
+        document.getElementById('current-tunnel-name').innerText = tunnels.find(t => t.id === currentTunnelID).name;
+    }
+
+    // --- Messaging Engine ---
+    document.getElementById('sendBtn').onclick = sendSignal;
+    document.getElementById('userInput').onkeypress = (e) => { if(e.key === 'Enter') sendSignal(); };
+
+    function sendSignal() {
+        const input = document.getElementById('userInput');
+        const text = input.value.trim();
+        if(!text) return;
+
+        const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        
+        // Encrypt & Store
+        const tunnel = tunnels.find(t => t.id === currentTunnelID);
+        const encrypted = CryptoJS.AES.encrypt(text, tunnel.key).toString();
+        
+        saveMsgToLocal(encrypted, myUID, time);
+        pushMsgToUI(text, myUID, time, true);
+        
+        // Broadcast to other tabs
+        channel.postMessage({ msg: text, sender: myUID, time: time });
+
+        input.value = "";
+    }
+
+    function pushMsgToUI(text, sender, time, isSent) {
+        const box = document.getElementById('chat-box');
+        const div = document.createElement('div');
+        div.className = `msg ${isSent ? 'sent' : 'received'}`;
+        div.innerHTML = `
+            <div class="msg-info">
+                <span>${sender === myUID ? 'YOU' : 'REMOTE_NODE'}</span>
+                <span>${time}</span>
+            </div>
+            <div class="msg-content">${text}</div>
+            <i class="fas fa-check-double" style="font-size:0.6rem; position:absolute; bottom:5px; left:10px; opacity:0.5"></i>
+        `;
+        box.appendChild(div);
+        box.scrollTop = box.scrollHeight;
+    }
+
+    function saveMsgToLocal(encText, sender, time) {
+        let history = JSON.parse(localStorage.getItem('hist_' + currentTunnelID)) || [];
+        history.push({encText, sender, time});
+        localStorage.setItem('hist_' + currentTunnelID, JSON.stringify(history));
+    }
+
+    function loadChatHistory() {
+        const tunnel = tunnels.find(t => t.id === currentTunnelID);
+        const history = JSON.parse(localStorage.getItem('hist_' + currentTunnelID)) || [];
+        document.getElementById('chat-box').innerHTML = "";
+        history.forEach(data => {
+            const bytes = CryptoJS.AES.decrypt(data.encText, tunnel.key);
+            const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+            pushMsgToUI(decrypted, data.sender, data.time, data.sender === myUID);
+        });
+    }
+
+    // --- Utility Features ---
+    function clearCurrentChat() {
+        if(confirm("سيتم حذف السجل المشفر لهذا النفق نهائياً. هل أنت متأكد؟")) {
+            localStorage.removeItem('hist_' + currentTunnelID);
+            location.reload();
+        }
+    }
+
+    function panicDestruct() {
+        if(confirm("تحذير: سيتم تدمير جميع الأنفاق، المفاتيح، والرسائل. لا يمكن التراجع!")) {
+            localStorage.clear();
+            window.location.href = window.location.pathname;
+        }
+    }
+
+    function refreshSync() {
+        const btn = document.querySelector('button[onclick="refreshSync()"] i');
+        btn.classList.add('fa-spin');
+        setTimeout(() => {
+            loadChatHistory();
+            btn.classList.remove('fa-spin');
+        }, 1000);
+    }
+
+    function copyTunnelURL() {
+        navigator.clipboard.writeText(window.location.href);
+        alert("تم نسخ رابط النفق بنجاح!");
+    }
+
+    function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+
+    // --- Visuals & Themes ---
     function initThemes() {
         const grid = document.getElementById('theme-grid');
         themes.forEach(t => {
@@ -206,7 +371,6 @@
         root.style.setProperty('--panel-dark', t.pnl);
         root.style.setProperty('--text-main', t.txt || '#e6edf3');
         root.style.setProperty('--sent-bg', t.acc + '22');
-        
         document.body.style.backgroundImage = '';
         localStorage.setItem('k0x0_theme', JSON.stringify(t));
     }
@@ -225,41 +389,8 @@
     function loadPrefs() {
         const savedTheme = localStorage.getItem('k0x0_theme');
         if(savedTheme) applyTheme(JSON.parse(savedTheme));
-        
         const savedBg = localStorage.getItem('k0x0_custom_bg');
         if(savedBg) document.body.style.backgroundImage = `url(${savedBg})`;
-    }
-
-    // --- بقية ميزاتك (التشفير، الأنفاق، المزامنة) ---
-    // [ملاحظة: تم الحفاظ على كافة وظائف التشفير AES و PBKDF2 والأنفاق من الكود الأصلي]
-
-    function attemptAccess() {
-        const pass = document.getElementById('vault-pass').value;
-        if(!pass) return;
-        
-        // منطق التشفير الخاص بك
-        const fingerprint = CryptoJS.SHA256(pass).toString().substr(0, 4).toUpperCase();
-        if (currentTunnel.startsWith('K0X0_') && currentTunnel.split('_')[1] !== fingerprint) {
-            alert("خطأ في مفتاح الوصول!"); return;
-        }
-
-        if (!tunnels.find(t => t.id === currentTunnel)) {
-            tunnels.push({id: currentTunnel, name: "Tunnel " + currentTunnel.substr(-4), key: pass});
-            localStorage.setItem('k0x0_tunnels', JSON.stringify(tunnels));
-        }
-        location.reload();
-    }
-
-    function renderTunnelList() {
-        const container = document.getElementById('tunnels-container');
-        container.innerHTML = "";
-        tunnels.forEach(t => {
-            const div = document.createElement('div');
-            div.className = `tunnel-item ${t.id === currentTunnel ? 'active' : ''}`;
-            div.onclick = () => window.location.href = `?room=${t.id}`;
-            div.innerHTML = `<span class="name">${t.name}</span><br><small style="font-family:Fira Code; opacity:0.5">${t.id}</small>`;
-            container.appendChild(div);
-        });
     }
 
     function drawMatrix() {
@@ -268,22 +399,17 @@
         canvas.width = window.innerWidth; canvas.height = window.innerHeight;
         const drops = Array(Math.floor(canvas.width/20)).fill(1);
         setInterval(() => {
-            ctx.fillStyle = "rgba(0, 0, 0, 0.05)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "rgba(0, 0, 0, 0.1)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent');
-            ctx.font = "15px monospace";
+            ctx.font = "15px 'Fira Code'";
             drops.forEach((y, i) => {
                 const text = String.fromCharCode(0x30A0 + Math.random() * 33);
-                ctx.fillText(text, i*20, y*20);
-                if(y*20 > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                ctx.fillText(text, i*25, y*25);
+                if(y*25 > canvas.height && Math.random() > 0.975) drops[i] = 0;
                 drops[i]++;
             });
         }, 50);
     }
-
-    // [إكمال بقية الدوال مثل sendSignal, pushMsg, panicDestruct بنفس المنطق الأصلي]
-    function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
-    function panicDestruct() { if(confirm("تدمير نهائي؟")) { localStorage.clear(); location.href = '/'; } }
-    function copyTunnelURL() { navigator.clipboard.writeText(window.location.href); alert("تم النسخ!"); }
 </script>
 </body>
 </html>
