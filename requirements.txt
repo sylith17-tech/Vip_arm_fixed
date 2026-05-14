@@ -9,3 +9,4 @@ Requests==2.34.0
 yt_dlp==2026.3.17
 gunicorn
 gevent-websocket
+moviepy==1.0.3
