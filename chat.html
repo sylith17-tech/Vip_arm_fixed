@@ -10,13 +10,11 @@
 
     <style>
         :root {
-            /* Theme Default: Matrix Tech */
             --bg: #010409; --panel: rgba(13, 17, 23, 0.98); --accent: #00f2ff;
             --text: #e6edf3; --border: rgba(48, 54, 61, 0.8); --sent: rgba(0, 242, 255, 0.1);
             --send-icon: "\f1d8"; --grad: radial-gradient(circle at center, #0d1117 0%, #010409 100%);
         }
 
-        /* Themes Configuration */
         body.theme-orange { --bg: #0a0500; --accent: #ff8c00; --sent: rgba(255, 140, 0, 0.1); --send-icon: "\f14d"; }
         body.theme-purple { --bg: #05000a; --accent: #bc13fe; --sent: rgba(188, 19, 254, 0.1); --send-icon: "\f093"; }
         body.theme-stealth { --bg: #0e0e0e; --accent: #ffffff; --sent: rgba(255, 255, 255, 0.1); --send-icon: "\f303"; }
@@ -27,7 +25,6 @@
 
         .app-container { display: flex; height: 100dvh; width: 100vw; position: relative; }
 
-        /* Navigation Sidebar */
         .chat-nav { 
             width: 300px; background: var(--panel); border-left: 1px solid var(--border); 
             display: flex; flex-direction: column; z-index: 2000; height: 100%;
@@ -41,29 +38,26 @@
             display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border);
         }
 
-        /* Messages Area */
         .messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; scroll-behavior: smooth; }
         
         .msg { 
             max-width: 80%; padding: 12px 16px; border-radius: 18px; font-size: 0.95rem; 
             border: 1px solid var(--border); position: relative; animation: msgPop 0.3s ease;
-            cursor: pointer; user-select: none;
+            cursor: pointer; word-wrap: break-word;
         }
         @keyframes msgPop { from { opacity: 0; transform: translateY(10px) scale(0.9); } }
         
         .msg.sent { align-self: flex-start; background: var(--sent); border-color: var(--accent); border-bottom-left-radius: 4px; }
         .msg.received { align-self: flex-end; background: rgba(255,255,255,0.03); border-bottom-right-radius: 4px; }
 
-        /* Reaction Badge */
         .reaction {
             position: absolute; bottom: -10px; left: 10px; background: var(--bg);
             border: 1px solid var(--accent); border-radius: 10px; padding: 2px 6px;
-            font-size: 0.7rem; display: none; animation: bounce 0.3s ease;
+            font-size: 0.7rem; display: none;
         }
-        .msg.liked .reaction { display: block; }
+        .msg.liked .reaction { display: block; animation: bounce 0.3s ease; }
         @keyframes bounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.3); } }
 
-        /* Input Bar Fix */
         .input-area { padding: 15px; background: var(--panel); border-top: 1px solid var(--border); padding-bottom: max(15px, env(safe-area-inset-bottom)); }
         .input-wrapper { 
             display: flex; gap: 10px; background: rgba(0,0,0,0.3); 
@@ -71,13 +65,11 @@
         }
         .input-wrapper input { flex: 1; background: transparent; border: none; color: #fff; padding: 10px 0; outline: none; font-size: 1rem; }
 
-        /* Buttons */
         .btn-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--accent); cursor: pointer; border: none; background: transparent; transition: 0.2s; }
         .btn-icon:active { transform: scale(0.9); background: rgba(255,255,255,0.1); }
         .btn-send { background: var(--accent); color: #000; }
         .btn-send::before { content: var(--send-icon); font-family: "Font Awesome 6 Free"; font-weight: 900; }
 
-        /* Vault & Theme Selector */
         .theme-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; padding: 15px; }
         .theme-dot { height: 30px; border-radius: 8px; border: 2px solid transparent; cursor: pointer; }
         .theme-dot.active { border-color: #fff; }
@@ -88,8 +80,10 @@
         }
 
         #vault-lock { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; align-items: center; justify-content: center; }
-        .tunnel-item { padding: 15px; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 10px; cursor: pointer; position: relative; overflow: hidden; }
+        .tunnel-item { padding: 15px; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 10px; cursor: pointer; }
         .tunnel-item.active { border-right: 5px solid var(--accent); background: var(--sent); }
+        
+        @keyframes spin { 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -100,7 +94,7 @@
         <h2 style="font-family:'Fira Code'; letter-spacing: 2px;">AUTHENTICATE</h2>
         <p style="font-size:0.7rem; opacity:0.6; margin-bottom:25px;">KERNEL-0X0 SECURITY PROTOCOL</p>
         <input type="password" id="vault-pass" placeholder="••••••••" style="width:100%; padding:15px; background:#000; border:1px solid var(--border); border-radius:12px; color:var(--accent); text-align:center; font-size:1.2rem; margin-bottom:20px;">
-        <button onclick="attemptAccess()" style="width:100%; padding:15px; background:var(--accent); border:none; border-radius:12px; font-weight:bold; color:#000;">ACCESS TUNNEL</button>
+        <button onclick="attemptAccess()" style="width:100%; padding:15px; background:var(--accent); border:none; border-radius:12px; font-weight:bold; color:#000; cursor:pointer;">ACCESS TUNNEL</button>
     </div>
 </div>
 
@@ -122,8 +116,8 @@
         <div id="tunnels-container" style="flex:1; overflow-y:auto; padding:15px;"></div>
         
         <div style="padding: 20px; border-top: 1px solid var(--border);">
-            <button onclick="createNewTunnel()" style="width:100%; padding:12px; background:transparent; border:1px dashed var(--accent); color:var(--accent); border-radius:12px; margin-bottom:10px;">+ نفق تشفير جديد</button>
-            <button onclick="panicDestruct()" style="width:100%; padding:12px; background:rgba(255,0,0,0.1); border:1px solid #ff003c; color:#ff003c; border-radius:12px;">تدمير البيانات (Panic)</button>
+            <button onclick="createNewTunnel()" style="width:100%; padding:12px; background:transparent; border:1px dashed var(--accent); color:var(--accent); border-radius:12px; margin-bottom:10px; cursor:pointer;">+ نفق تشفير جديد</button>
+            <button onclick="panicDestruct()" style="width:100%; padding:12px; background:rgba(255,0,0,0.1); border:1px solid #ff003c; color:#ff003c; border-radius:12px; cursor:pointer;">تدمير البيانات (Panic)</button>
         </div>
     </aside>
 
@@ -152,24 +146,24 @@
             <div class="input-wrapper">
                 <button class="btn-icon" onclick="alert('Encryption: AES-256-GCM Active')"><i class="fas fa-lock"></i></button>
                 <input type="text" id="userInput" placeholder="أرسل إشارة مشفرة..." autocomplete="off">
-                <button onclick="sendSignal()" class="btn-icon btn-send"></button>
+                <button id="sendBtn" onclick="sendSignal()" class="btn-icon btn-send"></button>
             </div>
         </div>
     </main>
 </div>
 
 <script>
-    // الحصول على المعطيات من الرابط
+    // Configuration & State
     const urlParams = new URLSearchParams(window.location.search);
     let currentTunnelID = urlParams.get('room') || 'Global_Node';
-    let sharedKey = urlParams.get('k'); // مفتاح مشفر ممرر في الرابط
-    let sharedName = urlParams.get('n'); // اسم الغرفة ممرر في الرابط
+    let sharedKey = urlParams.get('k');
+    let sharedName = urlParams.get('n');
 
     let tunnels = JSON.parse(localStorage.getItem('k0x0_tunnels')) || [{id: 'Global_Node', name: 'قناة الاختراق العامة', key: 'KERNEL_DEFAULT'}];
     
-    // فحص إذا كان النفق موجوداً، وإذا لم يكن، نقوم بإضافته (للمستقبل)
+    // Auto-import from URL
     if (sharedKey && !tunnels.find(t => t.id === currentTunnelID)) {
-        tunnels.push({id: currentTunnelID, name: sharedName || "نفق مشترك", key: sharedKey});
+        tunnels.push({id: currentTunnelID, name: sharedName || "نفق خارجي", key: sharedKey});
         localStorage.setItem('k0x0_tunnels', JSON.stringify(tunnels));
     }
 
@@ -179,13 +173,18 @@
     const socketURL = "wss://vip-arm-fixed.onrender.com/chat";
     let socket;
 
+    // Functions
     function setTheme(name) {
         document.body.className = name;
         localStorage.setItem('k0x0_theme', name);
     }
 
     function initWebSocket() {
-        if (socket) socket.close();
+        if (socket) {
+            socket.onclose = null;
+            socket.close();
+        }
+        
         socket = new WebSocket(`${socketURL}?room=${currentTunnelID}`);
         
         socket.onopen = () => {
@@ -215,22 +214,31 @@
         if (!txt) return;
 
         const tunnel = tunnels.find(t => t.id === currentTunnelID);
-        const encrypted = CryptoJS.AES.encrypt(txt, tunnel.key).toString();
-        const msgId = "MSG-" + Date.now();
-        const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
-        
-        const payload = { id: msgId, encText: encrypted, sender: myUID, time: time, room: currentTunnelID };
+        if (!tunnel) return;
 
-        if (socket && socket.readyState === 1) {
-            socket.send(JSON.stringify(payload));
-            pushUI(txt, myUID, time, true, msgId);
-            saveMsg(payload);
-            inp.value = "";
+        try {
+            const encrypted = CryptoJS.AES.encrypt(txt, tunnel.key).toString();
+            const msgId = "MSG-" + Date.now();
+            const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+            
+            const payload = { id: msgId, encText: encrypted, sender: myUID, time: time, room: currentTunnelID };
+
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify(payload));
+                pushUI(txt, myUID, time, true, msgId);
+                saveMsg(payload);
+                inp.value = "";
+            } else {
+                alert("جاري إعادة الاتصال بالنفق...");
+            }
+        } catch(e) {
+            console.error("Encryption Error:", e);
         }
     }
 
     function processIncoming(data) {
         const tunnel = tunnels.find(t => t.id === currentTunnelID);
+        if(!tunnel) return;
         try {
             const bytes = CryptoJS.AES.decrypt(data.encText, tunnel.key);
             const dec = bytes.toString(CryptoJS.enc.Utf8);
@@ -243,19 +251,24 @@
 
     function pushUI(text, sender, time, isMe, msgId) {
         const box = document.getElementById('chat-box');
-        const d = document.createElement('div');
-        d.className = `msg ${isMe ? 'sent' : 'received'}`;
-        d.id = msgId;
-        d.ondblclick = () => sendLike(msgId);
-        
-        d.innerHTML = `
-            <div style="font-size:0.65rem; color:var(--accent); font-weight:bold; margin-bottom:5px;">${sender} • ${time}</div>
-            <div>${text}</div>
-            <div class="reaction"><i class="fas fa-heart" style="color:#ff003c"></i></div>
-        `;
-        
-        box.appendChild(d);
-        box.scrollTop = box.scrollHeight;
+        if (!document.getElementById(msgId)) {
+            const d = document.createElement('div');
+            d.className = `msg ${isMe ? 'sent' : 'received'}`;
+            d.id = msgId;
+            d.onclick = () => {
+                // Single tap logic for mobile if needed
+            };
+            d.ondblclick = () => sendLike(msgId);
+            
+            d.innerHTML = `
+                <div style="font-size:0.65rem; color:var(--accent); font-weight:bold; margin-bottom:5px;">${sender} • ${time}</div>
+                <div>${text}</div>
+                <div class="reaction"><i class="fas fa-heart" style="color:#ff003c"></i></div>
+            `;
+            
+            box.appendChild(d);
+            box.scrollTop = box.scrollHeight;
+        }
     }
 
     function sendLike(msgId) {
@@ -263,7 +276,7 @@
         if (!msgEl || msgEl.classList.contains('liked')) return;
         
         msgEl.classList.add('liked');
-        if (socket && socket.readyState === 1) {
+        if (socket && socket.readyState === WebSocket.OPEN) {
             socket.send(JSON.stringify({ type: 'like', msgId: msgId, room: currentTunnelID }));
         }
     }
@@ -275,9 +288,11 @@
 
     function saveMsg(data) {
         let h = JSON.parse(localStorage.getItem('hist_' + currentTunnelID)) || [];
-        h.push(data);
-        if (h.length > 60) h.shift();
-        localStorage.setItem('hist_' + currentTunnelID, JSON.stringify(h));
+        if (!h.find(m => m.id === data.id)) {
+            h.push(data);
+            if (h.length > 60) h.shift();
+            localStorage.setItem('hist_' + currentTunnelID, JSON.stringify(h));
+        }
     }
 
     function loadHistory() {
@@ -289,7 +304,8 @@
         h.forEach(m => {
             try {
                 const b = CryptoJS.AES.decrypt(m.encText, tunnel.key);
-                pushUI(b.toString(CryptoJS.enc.Utf8), m.sender, m.time, m.sender === myUID, m.id);
+                const dec = b.toString(CryptoJS.enc.Utf8);
+                if(dec) pushUI(dec, m.sender, m.time, m.sender === myUID, m.id);
             } catch(e) {}
         });
     }
@@ -298,7 +314,6 @@
         const pass = document.getElementById('vault-pass').value;
         const tunnel = tunnels.find(t => t.id === currentTunnelID);
         
-        // تعديل منطق التحقق: إذا كان النفق غير موجود في التخزين، نعتبر الباسورد هو الكي الجديد
         if (tunnel) {
             if (tunnel.id === 'Global_Node' || tunnel.key === pass) {
                 sessionStorage.setItem('unlocked_' + currentTunnelID, 'true');
@@ -308,9 +323,10 @@
             } else {
                 alert("ACCESS DENIED: INVALID KEY");
             }
-        } else if (currentTunnelID !== 'Global_Node') {
-            // حالة الدخول لأول مرة عبر الرابط
-            tunnels.push({id: currentTunnelID, name: sharedName || "نفق خارجي", key: pass});
+        } else {
+            // New Tunnel from URL
+            const newT = {id: currentTunnelID, name: sharedName || "نفق خارجي", key: pass};
+            tunnels.push(newT);
             localStorage.setItem('k0x0_tunnels', JSON.stringify(tunnels));
             sessionStorage.setItem('unlocked_' + currentTunnelID, 'true');
             document.getElementById('vault-lock').style.display = 'none';
@@ -325,7 +341,11 @@
         const btn = document.getElementById('syncBtn');
         btn.style.animation = "spin 1s infinite linear";
         initWebSocket();
-        setTimeout(() => { btn.style.animation = ""; loadHistory(); }, 1500);
+        setTimeout(() => { 
+            btn.style.animation = ""; 
+            loadHistory(); 
+            alert("تمت مزامنة العقدة بنجاح");
+        }, 1500);
     }
 
     function createNewTunnel() {
@@ -346,19 +366,42 @@
             const d = document.createElement('div');
             d.className = `tunnel-item ${t.id === currentTunnelID ? 'active' : ''}`;
             d.innerHTML = `<div style="font-size:0.55rem; color:var(--accent); font-family:'Fira Code'">${t.id}</div><div style="font-weight:bold">${t.name}</div>`;
-            d.onclick = () => location.href = `?room=${t.id}&k=${encodeURIComponent(t.key)}&n=${encodeURIComponent(t.name)}`;
+            d.onclick = () => {
+                location.href = `?room=${t.id}&k=${encodeURIComponent(t.key)}&n=${encodeURIComponent(t.name)}`;
+            };
             container.appendChild(d);
         });
     }
 
-    function clearCurrentChat() { if(confirm("هل تريد مسح السجل المحلي لهذا النفق؟")) { localStorage.removeItem('hist_' + currentTunnelID); location.reload(); } }
+    function clearCurrentChat() { 
+        if(confirm("هل تريد مسح السجل المحلي لهذا النفق؟")) { 
+            localStorage.removeItem('hist_' + currentTunnelID); 
+            document.getElementById('chat-box').innerHTML = "";
+        } 
+    }
     
-    function panicDestruct() { if(confirm("سيتم تدمير جميع الأنفاق والسجلات والمفاتيح فوراً. هل أنت متأكد؟")) { localStorage.clear(); location.href = window.location.pathname; } }
+    function panicDestruct() { 
+        if(confirm("سيتم تدمير جميع الأنفاق والسجلات والمفاتيح فوراً. هل أنت متأكد؟")) { 
+            localStorage.clear(); 
+            location.href = window.location.pathname; 
+        } 
+    }
 
     function copyTunnelURL() {
         const tunnel = tunnels.find(t => t.id === currentTunnelID);
         const url = `${window.location.origin}${window.location.pathname}?room=${currentTunnelID}&k=${encodeURIComponent(tunnel.key)}&n=${encodeURIComponent(tunnel.name)}`;
-        navigator.clipboard.writeText(url).then(() => alert("تم نسخ الرابط المشفر (يحتوي على إحداثيات النفق)."));
+        
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(url).then(() => alert("تم نسخ رابط النفق المشفر."));
+        } else {
+            const textArea = document.createElement("textarea");
+            textArea.value = url;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            alert("تم نسخ الرابط (طريقة بديلة).");
+        }
     }
 
     window.onload = () => {
@@ -377,7 +420,9 @@
         }
     };
 
-    document.getElementById('userInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') sendSignal(); });
+    document.getElementById('userInput').addEventListener('keypress', (e) => { 
+        if (e.key === 'Enter') sendSignal(); 
+    });
 </script>
 
 </body>
