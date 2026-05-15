@@ -255,15 +255,16 @@
         };
 
         socket.onclose = (e) => {
+            console.log("WebSocket connection closed. Reconnecting...");
             clearInterval(pingInterval);
-            const statusIndicator = document.getElementById('conn-status');
+            const statusIndicator = document.getElementById("conn-status");
             if (statusIndicator) {
-                statusIndicator.style.background = '#ff003c';
-                statusIndicator.style.boxShadow = '0 0 8px #ff003c';
+                statusIndicator.style.background = "#ff003c";
+                statusIndicator.style.boxShadow = "0 0 8px #ff003c";
             }
-            const protocolInfo = document.getElementById('protocol-info');
+            const protocolInfo = document.getElementById("protocol-info");
             if (protocolInfo) protocolInfo.innerText = "CONNECTION_LOST - RECONNECTING...";
-
+            
             setTimeout(() => { initWebSocket(); }, 2000);
         };
 

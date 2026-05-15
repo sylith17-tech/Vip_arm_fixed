@@ -56,16 +56,7 @@ app.config['SECRET_KEY'] = 'VIP_ARM_SECURE_KEY_0x0'
 CORS(app)
 
 # إعداد SocketIO المطور لضمان وصول الرسائل للطرفين في بيئة Render
-socketio = SocketIO(
-    app,
-    cors_allowed_origins="*",
-    async_mode='gevent', 
-    ping_timeout=60,      # زيادة المهلة لضمان استقرار النفق
-    ping_interval=25,
-    manage_session=False,
-    logger=True,           # تفعيل السجلات لتتبع تدفق الرسائل
-    engineio_logger=True
-)
+socketio = SocketIO(app, cors_allowed_origins="*", ping_timeout=60, ping_interval=15)
 
 # إعداد المسارات الأساسية للنظام
 BASE_DIR = os.getcwd()
