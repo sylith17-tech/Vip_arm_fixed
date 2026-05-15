@@ -266,6 +266,7 @@
 
         socket.onclose = (e) => {
             console.log("WebSocket connection closed. Reconnecting...");
+            socket = null;
             clearInterval(pingInterval);
             const statusIndicator = document.getElementById("conn-status");
             if (statusIndicator) {
