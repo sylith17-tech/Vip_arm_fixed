@@ -50,7 +50,6 @@ def init_db():
 
 init_db()
 
-
 app = Flask(__name__, template_folder='.', static_folder='.')
 app.config['SECRET_KEY'] = 'VIP_ARM_SECURE_KEY_0x0'
 CORS(app)
@@ -75,7 +74,7 @@ def format_size(bytes_num):
     for unit in ['B', 'KB', 'MB', 'GB']:
         if bytes_num < 1024:
             return f"{bytes_num:.1f} {unit}"
-    if bytes_num > 0: bytes_num /= 1024
+        if bytes_num > 0: bytes_num /= 1024
     return "0 B"
 
 def get_ydl_opts(custom_out=None):
@@ -122,42 +121,76 @@ def dub_video(input_path, lang='ar'):
         if os.path.exists(temp_audio):
             os.remove(temp_audio)
 
-# --- [SOCKET_IO_COMMUNICATION - FIXED FOR MULTIPLAYER] ---
+# --- [SOCKET_IO_COMMUNICATION - UPDATED & RESTRUCTURED] ---
 @socketio.on('join')
-def on_join(data):
+def handle_join(data):
+    room = data.get('room', 'global')
+    user = data.get('user', 'UNKNOWN_NODE')
+    join_room(room)
+    logger.info(f"SIGNAL: Node {user} synchronized with Tunnel {room}")
+    
+    # جلب الأرشيف التاريخي للغرفة وإرساله إلى العقدة المنضمة حديثاً فقط عبر الـ SID لضمان السرية
     try:
         conn = sqlite3.connect("chat.db")
         c = conn.cursor()
-        c.execute("SELECT user, msg FROM messages WHERE room = ? ORDER BY timestamp DESC LIMIT 50", (data.get("room"),))
+        c.execute("SELECT user, msg FROM messages WHERE room = ? ORDER BY timestamp DESC LIMIT 50", (room,))
         history = c.fetchall()[::-1]
         conn.close()
-        for user, msg in history:
-            emit("message", {"user": user, "msg": msg}, room=request.sid)
+        for h_user, h_msg in history:
+            emit("message", {"user": h_user, "msg": h_msg, "room": room}, room=request.sid)
     except Exception as e:
-        print(f"History Error: {e}")
-    room = data.get('room', 'global')
-    user = data.get('user', 'Unknown')
-    join_room(room)
-    logger.info(f"SIGNAL: Node {user} synchronized with Tunnel {room}")
-    emit('status', {'msg': f'Node {user} is online'}, room=room)
+        print(f"History Sync Error: {e}")
+
+    # بث إشعار الحالة داخل النفق
+    emit('status', {'msg': f'Node {user} is online'}, to=room)
 
 @socketio.on('message')
 def handle_message(data):
-    if isinstance(data, dict) and data.get("type") == "ping":
+    if not isinstance(data, dict):
+        return
+        
+    # الحفاظ على ميزة الـ Ping/Pong الحالية
+    if data.get("type") == "ping":
         emit("message", {"type": "pong"}, room=data.get("room", "global"))
         return
-    try:
-        conn = sqlite3.connect("chat.db")
-        c = conn.cursor()
-        c.execute("INSERT INTO messages (room, user, msg) VALUES (?, ?, ?)", (data.get("room"), data.get("user"), data.get("msg")))
-        conn.commit()
-        conn.close()
-    except Exception as e:
-        print(f"DB Error: {e}")
-    # تم دمج إصلاح البث لضمان وصول الرسالة لجميع الأطراف في الغرفة
+
     room = data.get('room', 'global')
-    logger.info(f"ROUTING: Encrypted signal received in Tunnel {room}")
-    emit('message', data, room=room, broadcast=True, include_self=False)
+    msg_encrypted = data.get('msg')
+    user_encrypted = data.get('user')
+
+    # حفظ الإشارة المشفرة بداخل قاعدة البيانات للمزامنة اللاحقة
+    if msg_encrypted and user_encrypted:
+        try:
+            conn = sqlite3.connect("chat.db")
+            c = conn.cursor()
+            c.execute("INSERT INTO messages (room, user, msg) VALUES (?, ?, ?)", (room, user_encrypted, msg_encrypted))
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            print(f"DB Encryption Injection Error: {e}")
+
+        logger.info(f"ROUTING: Encrypted signal received in Tunnel {room}")
+        
+        # إعادة بث الرسالة المشفرة إلى كافة العقد المتصلة بالنفق (ما عدا المرسل لضمان عدم التكرار البصري)
+        emit('message', {
+            'room': room,
+            'msg': msg_encrypted,
+            'user': user_encrypted
+        }, to=room, include_self=False)
+
+@socketio.on('typing')
+def handle_typing(data):
+    if isinstance(data, dict):
+        room = data.get('room', 'global')
+        user = data.get('user')
+        is_typing = data.get('isTyping', False)
+        
+        # تمرير حالة الكتابة للطرف الآخر داخل النفق
+        emit('typing', {
+            'room': room,
+            'user': user,
+            'isTyping': is_typing
+        }, to=room, include_self=False)
 
 # --- [ROUTES] ---
 @app.route('/')

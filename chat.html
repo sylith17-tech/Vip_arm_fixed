@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
-
+    
     <style>
         :root {
             --bg-dark: #010409;
@@ -20,16 +20,16 @@
             --border: #30363d;
             --sidebar-w: 300px;
         }
-
+        
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
         body, html { height: 100dvh; margin: 0; padding: 0; overflow: hidden; background: var(--bg-dark); font-family: 'Cairo', sans-serif; color: var(--text-main); position: fixed; width: 100%; }
-
+        
         #matrix-canvas { position: fixed; top: 0; left: 0; opacity: 0.15; z-index: 0; pointer-events: none; }
-
+        
         /* Secure Overlay */
         #vault-lock { position: fixed; top:0; left:0; width:100%; height:100dvh; background: var(--bg-dark); z-index: 9999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(20px); }
         .lock-box { background: var(--panel-dark); padding: 40px; border-radius: 20px; border: 1px solid var(--accent); text-align: center; width: 90%; max-width: 400px; box-shadow: 0 0 40px rgba(0, 242, 255, 0.05); }
-
+        
         .app-container { display: flex; height: 100dvh; width: 100vw; position: relative; z-index: 1; }
         
         /* Sidebar Enhanced */
@@ -51,9 +51,8 @@
         .msg strong { display: block; font-size: 0.65rem; color: var(--accent); font-family: 'Fira Code'; margin-bottom: 5px; opacity: 0.8; }
 
         .msg-meta { display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 5px; font-size: 0.65rem; opacity: 0.6; }
-        .reaction-bar { display: inline-flex; gap: 5px; margin-top: 5px; font-size: 0.8rem; background: rgba(0,0,0,0.4); padding: 2px 8px; border-radius: 20px; border: 1px solid var(--border); cursor: pointer; }
 
-        #typing-indicator { font-size: 0.7rem; color: var(--accent); font-family: 'Fira Code'; padding: 5px 25px; height: 20px; opacity: 0; }
+        #typing-indicator { font-size: 0.7rem; color: var(--accent); font-family: 'Fira Code'; padding: 5px 25px; height: 20px; opacity: 0; transition: opacity 0.3s ease; }
 
         .input-area { padding: 15px; background: var(--panel-dark); border-top: 1px solid var(--border); }
         .input-wrapper { display: flex; gap: 10px; align-items: center; background: #000; padding: 5px 15px; border-radius: 12px; border: 1px solid var(--border); }
@@ -72,7 +71,6 @@
 
 <canvas id="matrix-canvas"></canvas>
 
-<!-- Vault Entry -->
 <div id="vault-lock">
     <div class="lock-box">
         <div style="margin-bottom: 20px;"><i class="fas fa-shield-halved" style="font-size: 3rem; color: var(--accent);"></i></div>
@@ -85,7 +83,6 @@
 </div>
 
 <div class="app-container">
-    <!-- Sidebar -->
     <div class="chat-nav" id="sidebar">
         <div style="padding: 20px; border-bottom: 1px solid var(--border);">
             <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -93,10 +90,9 @@
                 <button onclick="toggleSidebar()" class="btn-action"><i class="fas fa-times"></i></button>
             </div>
         </div>
-        
+
         <div class="tunnel-list" id="tunnels-container">
-            <!-- Tunnels will be injected here -->
-        </div>
+            </div>
 
         <div style="padding: 15px; border-top: 1px solid var(--border); background: rgba(0,0,0,0.2);">
             <button onclick="createNewTunnel()" style="width: 100%; padding: 12px; background: var(--accent); color: black; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-bottom: 10px;">
@@ -108,7 +104,6 @@
         </div>
     </div>
 
-    <!-- Main Chat -->
     <div class="chat-main">
         <header style="padding: 12px 20px; background: var(--panel-dark); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border);">
             <div style="display: flex; align-items: center; gap: 15px;">
@@ -119,14 +114,14 @@
                 </div>
             </div>
             <div style="display: flex; gap: 15px;">
-                <button title="تحديث المزامنة" onclick="refreshSync()" class="btn-action"><i class="fas fa-sync-alt"></i></button>
+                <button title="تحديث المزامنة" onclick="refreshSync()" class="btn-action" id="sync-btn-icon"><i class="fas fa-sync-alt"></i></button>
                 <button title="نسخ رابط النفق" onclick="copyTunnelURL()" class="btn-action"><i class="fas fa-share-nodes"></i></button>
                 <button title="مسح المحادثة" onclick="clearCurrentChat()" class="btn-action" style="color: var(--danger);"><i class="fas fa-trash-alt"></i></button>
             </div>
         </header>
 
         <div class="messages" id="chat-box"></div>
-        
+
         <div id="typing-indicator">الطرف الآخر يقوم بتشفير رسالة...</div>
 
         <div class="input-area">
@@ -144,8 +139,12 @@
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
-    const socket = io({ transports: ['websocket'], reconnection: true });
-    
+    const socket = io({ 
+        transports: ['websocket'], 
+        reconnection: true,
+        upgrade: false 
+    });
+
     let currentTunnel = 'global';
     let masterKey = '';
     let tunnels = JSON.parse(localStorage.getItem('k0x0_tunnels')) || [{id: 'global', name: 'Global Signal', key: 'GLOBAL_DEF'}];
@@ -157,32 +156,36 @@
     window.onload = () => {
         const params = new URLSearchParams(window.location.search);
         const roomParam = params.get('room');
-        
+
         if (roomParam) {
             currentTunnel = roomParam;
             const existing = tunnels.find(t => t.id === roomParam);
             if (!existing) {
-                // نفق جديد من رابط
                 document.getElementById('vault-lock').style.display = 'flex';
             } else {
                 masterKey = existing.key;
                 initTunnel();
             }
         } else {
-            initTunnel(); // Global
+            const existingGlobal = tunnels.find(t => t.id === 'global');
+            masterKey = existingGlobal ? existingGlobal.key : 'GLOBAL_DEF';
+            initTunnel();
         }
-        
+
         renderTunnelList();
         drawMatrix();
+        setupSocketListeners();
     };
 
     function initTunnel() {
         document.getElementById('vault-lock').style.display = 'none';
-        socket.emit('join', { room: currentTunnel, user: myID });
         
+        // إشعار السيرفر بالانضمام للغرفة
+        socket.emit('join', { room: currentTunnel, user: myID });
+
         const tunnelData = tunnels.find(t => t.id === currentTunnel);
         document.getElementById('current-tunnel-name').innerText = tunnelData ? tunnelData.name : currentTunnel;
-        
+
         loadChatHistory();
         renderTunnelList();
     }
@@ -195,7 +198,6 @@
         const pass = document.getElementById('vault-pass').value;
         if(!pass) return;
 
-        // التحقق من البصمة إذا كان النفق مصمم ببروتوكول K0X0
         if (currentTunnel.startsWith('K0X0_')) {
             const fingerprint = CryptoJS.SHA256(pass).toString().substr(0, 4).toUpperCase();
             if (currentTunnel.split('_')[1] !== fingerprint) {
@@ -205,7 +207,6 @@
         }
 
         masterKey = pass;
-        // إضافة النفق للقائمة المحفوظة
         if (!tunnels.find(t => t.id === currentTunnel)) {
             tunnels.push({id: currentTunnel, name: "Tunnel " + currentTunnel.substr(-4), key: masterKey});
             saveTunnels();
@@ -213,24 +214,71 @@
         initTunnel();
     }
 
-    // إدارة الرسائل والحفظ
-    socket.on('message', (data) => {
-        const tunnelData = tunnels.find(t => t.id === currentTunnel);
-        if(!tunnelData) return;
+    function setupSocketListeners() {
+        // تنظيف الأحداث لتجنب التكرار والتداخل
+        socket.off('message');
+        socket.off('typing');
+        socket.off('history_response'); // مستمع خاص لاستقبال الأرشيف المعلق من السيرفر إذا كان مدعوماً
 
-        try {
-            const dKey = deriveKey(tunnelData.key, currentTunnel);
-            const bytes = CryptoJS.AES.decrypt(data.msg, dKey);
-            const text = bytes.toString(CryptoJS.enc.Utf8);
-            
-            const uBytes = CryptoJS.AES.decrypt(data.user, dKey);
-            const sender = uBytes.toString(CryptoJS.enc.Utf8);
+        socket.on('message', (data) => {
+            // التحقق من أن الرسالة تنتمي للغرفة الحالية من خلال السيرفر لمنع تداخل الأنفاق
+            if (data.room && data.room !== currentTunnel) return;
 
-            if (text && sender !== myID) {
-                pushMsg(sender, text, 'received', true);
+            const tunnelData = tunnels.find(t => t.id === currentTunnel);
+            if(!tunnelData) return;
+
+            try {
+                const dKey = deriveKey(tunnelData.key, currentTunnel);
+                
+                // فك تشفير الرسالة
+                const bytes = CryptoJS.AES.decrypt(data.msg, dKey);
+                const text = bytes.toString(CryptoJS.enc.Utf8);
+
+                // فك تشفير الهوية
+                const uBytes = CryptoJS.AES.decrypt(data.user, dKey);
+                const sender = uBytes.toString(CryptoJS.enc.Utf8);
+
+                if (text && sender !== myID) {
+                    pushMsg(sender, text, 'received', true);
+                }
+            } catch (e) { 
+                console.error("Crypt-Error: Key Mismatch or Broken Signal Structure"); 
             }
-        } catch (e) { console.error("Crypt-Error"); }
-    });
+        });
+
+        socket.on('typing', (data) => { 
+            if(data.room === currentTunnel && data.user !== myID) {
+                document.getElementById('typing-indicator').style.opacity = data.isTyping ? "1" : "0"; 
+            }
+        });
+
+        // في حال أرسل السيرفر مصفوفة الرسائل المعلقة أثناء تحديث المزامنة
+        socket.on('history_response', (data) => {
+            if (data.room === currentTunnel && data.messages) {
+                const tunnelData = tunnels.find(t => t.id === currentTunnel);
+                if(!tunnelData) return;
+                
+                const dKey = deriveKey(tunnelData.key, currentTunnel);
+                data.messages.forEach(m => {
+                    try {
+                        const bytes = CryptoJS.AES.decrypt(m.msg, dKey);
+                        const text = bytes.toString(CryptoJS.enc.Utf8);
+                        const uBytes = CryptoJS.AES.decrypt(m.user, dKey);
+                        const sender = uBytes.toString(CryptoJS.enc.Utf8);
+                        
+                        // فحص عدم تكرار الرسالة بالـ LocalStorage
+                        const history = JSON.parse(localStorage.getItem(`hist_${currentTunnel}`)) || [];
+                        const exists = history.some(h => h.msg === text && h.time === m.time);
+                        
+                        if (text && !exists) {
+                            const type = (sender === myID) ? 'sent' : 'received';
+                            pushMsg(sender, text, type, true);
+                        }
+                    } catch(e) {}
+                });
+            }
+        });
+    }
 
     function sendSignal() {
         const inp = document.getElementById('userInput');
@@ -241,6 +289,7 @@
         const encMsg = CryptoJS.AES.encrypt(text, dKey).toString();
         const encUser = CryptoJS.AES.encrypt(myID, dKey).toString();
 
+        // إرسال كائن كامل يتضمن اسم الغرفة (room) لكي يوجهها السيرفر بشكل صحيح
         socket.emit('message', { room: currentTunnel, msg: encMsg, user: encUser });
         pushMsg("أنت", text, 'sent', true);
         inp.value = "";
@@ -248,12 +297,21 @@
 
     function pushMsg(user, msg, type, save = false) {
         const box = document.getElementById('chat-box');
+        
+        // التحقق من منع التكرار البصري الفوري
+        if (save) {
+            const currentHistory = JSON.parse(localStorage.getItem(`hist_${currentTunnel}`)) || [];
+            if (currentHistory.length > 0 && currentHistory[currentHistory.length - 1].msg === msg && currentHistory[currentHistory.length - 1].user === user) {
+                return; // منع تكرار نفس الرسالة مرتين بالخطأ
+            }
+        }
+
         const div = document.createElement('div');
         div.className = `msg ${type}`;
-        
+
         const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
         const content = msg.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" style="color:var(--accent)">$1</a>');
-        
+
         div.innerHTML = `
             <strong>${user}</strong>
             <div>${content}</div>
@@ -262,14 +320,14 @@
                 ${type === 'sent' ? '<i class="fas fa-check-double" style="color:var(--accent)"></i>' : ''}
             </div>
         `;
-        
+
         box.appendChild(div);
         box.scrollTop = box.scrollHeight;
 
         if (save) {
             const history = JSON.parse(localStorage.getItem(`hist_${currentTunnel}`)) || [];
             history.push({user, msg, type, time});
-            localStorage.setItem(`hist_${currentTunnel}`, JSON.stringify(history.slice(-100))); // حفظ آخر 100 رسالة
+            localStorage.setItem(`hist_${currentTunnel}`, JSON.stringify(history.slice(-100)));
         }
     }
 
@@ -297,7 +355,7 @@
 
     function switchTunnel(id) {
         if (id === currentTunnel) return;
-        window.location.href = `?room=${id}`;
+        window.location.search = `?room=${id}`;
     }
 
     function createNewTunnel() {
@@ -307,23 +365,34 @@
 
         const fingerprint = CryptoJS.SHA256(pass).toString().substr(0, 4).toUpperCase();
         const newID = "K0X0_" + fingerprint + "_" + Math.random().toString(36).substr(2, 6).toUpperCase();
-        
+
         tunnels.push({id: newID, name: name, key: pass});
         saveTunnels();
         switchTunnel(newID);
     }
 
     function refreshSync() {
-        loadChatHistory();
-        socket.emit('join', { room: currentTunnel, user: myID });
-        const btn = document.querySelector('.fas.fa-sync-alt');
+        const btn = document.getElementById('sync-btn-icon').querySelector('i');
+        btn.style.transition = "transform 0.5s ease";
         btn.style.transform = "rotate(360deg)";
-        setTimeout(() => btn.style.transform = "rotate(0deg)", 500);
+        
+        // 1. إعادة البناء المحلي للمحادثة
+        loadChatHistory();
+        
+        // 2. إعادة إرسال طلب الانضمام لإنعاش النفق واسترجاع المعلقات
+        socket.emit('join', { room: currentTunnel, user: myID });
+        
+        // 3. إرسال حدث مخصص لطلب السجل التاريخي المعلق من السيرفر (إذا كان السيرفر يدعم الحفظ المؤقت)
+        socket.emit('request_history', { room: currentTunnel, user: myID });
+        
+        setTimeout(() => {
+            btn.style.transform = "rotate(0deg)";
+        }, 500);
     }
 
     function saveTunnels() { localStorage.setItem('k0x0_tunnels', JSON.stringify(tunnels)); }
     function clearCurrentChat() { if(confirm("مسح سجل هذا النفق فقط؟")) { localStorage.removeItem(`hist_${currentTunnel}`); loadChatHistory(); } }
-    function panicDestruct() { if(confirm("سيتم تدمير كافة الأنفاق والرسائل والمفاتيح. هل أنت متأكد؟")) { localStorage.clear(); location.href = '/'; } }
+    function panicDestruct() { if(confirm("سيتم تدمير كافة الأنفاق والرسائل والمفاتيح. هل أنت متأكد؟")) { localStorage.clear(); window.location.search = ""; } }
     function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
     function copyTunnelURL() { navigator.clipboard.writeText(window.location.href); alert("تم نسخ رابط النفق المشفر!"); }
 
@@ -334,7 +403,6 @@
         clearTimeout(typingTimer);
         typingTimer = setTimeout(() => socket.emit('typing', { room: currentTunnel, user: myID, isTyping: false }), 2000);
     });
-    socket.on('typing', (data) => { if(data.user !== myID) document.getElementById('typing-indicator').style.opacity = data.isTyping ? "1" : "0"; });
 
     document.getElementById('sendBtn').onclick = sendSignal;
     document.getElementById('userInput').onkeypress = (e) => { if(e.key === 'Enter') sendSignal(); };
