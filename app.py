@@ -122,28 +122,6 @@ def dub_video(input_path, lang='ar'):
             os.remove(temp_audio)
 
 # --- [SOCKET_IO_COMMUNICATION - UPDATED & RESTRUCTURED] ---
-@socketio.on('join')
-def handle_join(data):
-    room = data.get('room', 'global')
-    user = data.get('user', 'UNKNOWN_NODE')
-    join_room(room)
-    logger.info(f"SIGNAL: Node {user} synchronized with Tunnel {room}")
-    
-    # جلب الأرشيف التاريخي للغرفة وإرساله إلى العقدة المنضمة حديثاً فقط عبر الـ SID لضمان السرية
-    try:
-        conn = sqlite3.connect("chat.db")
-        c = conn.cursor()
-        c.execute("SELECT user, msg FROM messages WHERE room = ? ORDER BY timestamp DESC LIMIT 50", (room,))
-        history = c.fetchall()[::-1]
-        conn.close()
-        for h_user, h_msg in history:
-            emit("message", {"user": h_user, "msg": h_msg, "room": room})
-    except Exception as e:
-        print(f"History Sync Error: {e}")
-
-    # بث إشعار الحالة داخل النفق
-    emit('status', {'msg': f'Node {user} is online'}, to=room, include_self=False)
-
 @socketio.on('message')
 def handle_message(data):
     if not isinstance(data, dict):
@@ -328,3 +306,24 @@ if __name__ == '__main__':
 else:
     # لضمان توافق خادم Gunicorn في بيئة Render السحابية
     application = app
+
+
+@socketio.on("join")
+def handle_join_fixed(data):
+    room = data.get("room", "global")
+    user = data.get("user", "UNKNOWN_NODE")
+    join_room(room)
+    
+    try:
+        import sqlite3
+        conn = sqlite3.connect("chat.db")
+        c = conn.cursor()
+        c.execute("SELECT user, msg FROM messages WHERE room = ? ORDER BY timestamp DESC LIMIT 50", (room,))
+        history = c.fetchall()[::-1]
+        conn.close()
+        for h_user, h_msg in history:
+            emit("message", {"user": h_user, "msg": h_msg, "room": room})
+    except Exception as e:
+        print(f"History Error: {e}")
+
+    emit("status", {"msg": f"Node {user} is online"}, to=room)
