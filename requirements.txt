@@ -3,7 +3,7 @@ flask_cors==6.0.2
 flask_socketio==5.6.0
 gevent==25.9.1
 gTTS==2.5.4
-moviepy==1.0.3
+moviepy
 Pillow>=9.2.0,<12.0
 Requests==2.34.0
 yt_dlp==2026.3.17

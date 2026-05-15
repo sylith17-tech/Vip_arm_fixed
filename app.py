@@ -29,7 +29,7 @@ except ImportError:
         try:
             from moviepy.video.io.VideoFileClip import VideoFileClip
             from moviepy.audio.io.AudioFileClip import AudioFileClip
-            import moviepy.video.fx.all as vfx
+            import moviepy.video.fx as vfx
         except Exception as e:
             print(f"CRITICAL: MoviePy Load Failed: {e}")
 
@@ -60,7 +60,7 @@ socketio = SocketIO(
     app,
     cors_allowed_origins="*",
     async_mode='gevent', 
-    ping_timeout=600,      # زيادة المهلة لضمان استقرار النفق
+    ping_timeout=60,      # زيادة المهلة لضمان استقرار النفق
     ping_interval=25,
     manage_session=False,
     logger=True,           # تفعيل السجلات لتتبع تدفق الرسائل
